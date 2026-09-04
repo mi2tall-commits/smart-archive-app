@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Smart Archive | 스마트 북마크 & 지식 보관소</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3588/3588658.png">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            dark: {
+              900: '#0f172a',
+              850: '#131e36',
+              800: '#1e293b',
+              750: '#28354d',
+              700: '#334155',
+              600: '#475569'
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+    body {
+      font-family: 'Pretendard', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Masonry Column Layout */
+    .masonry-grid {
+      column-count: 1;
+      column-gap: 1.25rem;
+    }
+    @media (min-width: 640px) {
+      .masonry-grid { column-count: 2; }
+    }
+    @media (min-width: 1024px) {
+      .masonry-grid { column-count: 3; }
+    }
+    @media (min-width: 1440px) {
+      .masonry-grid { column-count: 4; }
+    }
+    
+    .masonry-item {
+      break-inside: avoid;
+      margin-bottom: 1.25rem;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.5);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 114, 128, 0.8);
+    }
+    
+    /* Smooth Transitions */
+    * {
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-dark-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- 🌟 상단 고정 네비게이션 헤더 -->
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-dark-900/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        
+        <!-- 로고 및 서비스 타이틀 -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="resetFilters()">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-box-archive text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">AI Smart Archive</h1>
+              <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded">PRO</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">지능형 텔레그램 연동 북마크 보관소</p>
+          </div>
+        </div>
+
+        <!-- 중앙 검색 바 (데스크톱) -->
+        <div class="hidden md:flex flex-1 max-w-md relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+          </div>
+          <input 
+            type="text" 
+            id="searchInputDesktop"
+            oninput="handleSearch(this.value)"
+            placeholder="제목, 요약 내용, #태그, 도메인 검색..." 
+            class="w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-dark-800 border border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-dark-850 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder-slate-400 dark:placeholder-slate-500"
+          >
+          <button id="clearSearchBtnDesktop" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- 우측 액션 버튼 그룹 -->
+        <div class="flex items-center gap-2">
+          <!-- 텔레그램 연동 모달 버튼 -->
+          <button 
+            onclick="openTelegramModal()" 
+            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 rounded-xl border border-sky-200 dark:border-sky-500/20 transition-colors"
+          >
+            <i class="fa-brands fa-telegram text-sm text-[#229ED9]"></i>
+            <span>텔레그램 연동</span>
+          </button>
+
+          <!-- 직접 URL 추가 버튼 -->
+          <button 
+            onclick="openAddModal()" 
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
+          >
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>링크 추가</span>
+          </button>
+
+          <!-- 새로고침 버튼 -->
+          <button 
+            onclick="fetchBookmarks(true)" 
+            title="새로고침"
+            class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-xl transition-colors"
+          >
+            <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm"></i>
+          </button>
+
+          <!-- 다크 모드 토글 -->
+          <button 
+            onclick="toggleDarkMode()" 
+            title="다크 모드 토글"
+            class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-xl transition-colors"
+          >
+            <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 모바일 검색 바 -->
+      <div class="md:hidden pb-3">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+          </div>
+          <input 
+            type="text" 
+            id="searchInputMobile"
+            oninput="handleSearch(this.value)"
+            placeholder="제목, 요약, #태그 검색..." 
+            class="w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-dark-800 border border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-dark-850 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 placeholder-slate-400 dark:placeholder-slate-500"
+          >
+          <button id="clearSearchBtnMobile" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 🏷️ 카테고리 필터 탭 & 툴바 -->
+  <section class="bg-white/60 dark:bg-dark-850/60 border-b border-slate-200 dark:border-dark-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+      <div class="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+        
+        <!-- 카테고리 필터 버튼 목록 -->
+        <div class="flex items-center gap-1.5 flex-nowrap" id="categoryFilterContainer">
+          <button onclick="setCategoryFilter('all')" data-cat="all" class="cat-btn active px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap bg-emerald-600 text-white shadow-sm transition-colors">
+            전체 <span id="countAll" class="ml-1 opacity-80">(0)</span>
+          </button>
+          <button onclick="setCategoryFilter('pinned')" data-cat="pinned" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            ⭐ 즐겨찾기 <span id="countPinned" class="ml-1 opacity-80">(0)</span>
+          </button>
+          <button onclick="setCategoryFilter('unread')" data-cat="unread" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            📥 읽지 않음 <span id="countUnread" class="ml-1 opacity-80">(0)</span>
+          </button>
+          <button onclick="setCategoryFilter('💻 개발/IT')" data-cat="💻 개발/IT" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            💻 개발/IT
+          </button>
+          <button onclick="setCategoryFilter('📰 뉴스/트렌드')" data-cat="📰 뉴스/트렌드" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            📰 뉴스/트렌드
+          </button>
+          <button onclick="setCategoryFilter('🎨 디자인/UI')" data-cat="🎨 디자인/UI" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            🎨 디자인/UI
+          </button>
+          <button onclick="setCategoryFilter('📈 비즈니스/재테크')" data-cat="📈 비즈니스/재테크" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            📈 비즈니스
+          </button>
+          <button onclick="setCategoryFilter('🏃 라이프/운동')" data-cat="🏃 라이프/운동" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            🏃 라이프
+          </button>
+          <button onclick="setCategoryFilter('💡 지식/인사이트')" data-cat="💡 지식/인사이트" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+            💡 지식
+          </button>
+        </div>
+
+        <!-- 정렬 선택기 -->
+        <div class="flex items-center gap-2 shrink-0">
+          <select 
+            id="sortSelect" 
+            onchange="handleSortChange(this.value)"
+            class="px-2.5 py-1.5 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 text-slate-700 dark:text-slate-300 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            <option value="newest">🕒 최신 등록순</option>
+            <option value="oldest">⌛ 오래된순</option>
+            <option value="title">🔤 제목순 (A-Z)</option>
+            <option value="pinned">⭐ 즐겨찾기 우선</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 📢 활성화된 태그 필터 바 (태그 클릭 시 노출) -->
+  <div id="activeTagBar" class="hidden bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/40 py-2">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+        <i class="fa-solid fa-tag"></i>
+        <span>선택된 태그 필터:</span>
+        <span id="activeTagBadge" class="font-bold px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 rounded text-emerald-900 dark:text-emerald-200"></span>
+      </div>
+      <button onclick="clearTagFilter()" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+        <i class="fa-solid fa-xmark"></i> 필터 해제
+      </button>
+    </div>
+  </div>
+
+  <!-- 📦 메인 콘텐츠 영역 (핀터레스트 스타일 Masonry Card Grid) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    
+    <!-- 로딩 인디케이터 -->
+    <div id="loadingState" class="hidden flex flex-col items-center justify-center py-20">
+      <div class="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">스마트 북마크 데이터를 불러오는 중...</p>
+    </div>
+
+    <!-- 빈 상태 (Empty State) -->
+    <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-20 h-20 rounded-2xl bg-emerald-50 dark:bg-dark-800 border border-emerald-200 dark:border-dark-750 flex items-center justify-center text-emerald-500 text-3xl mb-4">
+        <i class="fa-solid fa-folder-open"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">보관된 북마크가 없습니다</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6">
+        텔레그램 AI 비서에게 링크를 보내거나, 상단의 <b>[링크 추가]</b> 버튼을 눌러 첫 번째 스마트 북마크를 아카이빙해 보세요!
+      </p>
+      <div class="flex items-center gap-3">
+        <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md transition-colors">
+          <i class="fa-solid fa-plus mr-1.5"></i> 링크 직접 등록
+        </button>
+        <button onclick="openTelegramModal()" class="px-4 py-2 bg-slate-200 dark:bg-dark-800 hover:bg-slate-300 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl transition-colors">
+          <i class="fa-brands fa-telegram text-[#229ED9] mr-1.5"></i> 텔레그램 가이드
+        </button>
+      </div>
+    </div>
+
+    <!-- Masonry Cards Container -->
+    <div id="masonryContainer" class="masonry-grid">
+      <!-- JavaScript로 동적 렌더링 -->
+    </div>
+
+  </main>
+
+  <!-- 📱 텔레그램 연동 가이드 모달 -->
+  <div id="telegramModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-md w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-xl">
+              <i class="fa-brands fa-telegram text-[#229ED9]"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-slate-900 dark:text-white">텔레그램 봇 자동 아카이빙</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">0초 만에 끝나는 AI 스마트 큐레이션</p>
+            </div>
+          </div>
+          <button onclick="closeTelegramModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+          <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-dark-800 rounded-xl">
+            <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+            <div>
+              <p class="font-semibold text-slate-800 dark:text-slate-200">링크를 텔레그램 AI 비서에게 전송</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">인스타 릴스, 유튜브, IT 블로그, 뉴스 등 읽고 싶은 링크를 채팅창에 전송합니다.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-dark-800 rounded-xl">
+            <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+            <div>
+              <p class="font-semibold text-slate-800 dark:text-slate-200">AI가 3줄 핵심 요약 & 태그 자동 생성</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">제미나이 AI가 썸네일, 파비콘, 3줄 요약 불릿, 관련 카테고리/해시태그를 즉시 추출합니다.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-dark-800 rounded-xl">
+            <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+            <div>
+              <p class="font-semibold text-slate-800 dark:text-slate-200"><b>[✅ 아카이브에 저장]</b> 원클릭 승인</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">버튼을 터치하면 구글 시트 DB와 본 웹앱에 실시간 핀터레스트 카드로 영구 보관됩니다!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col gap-2">
+          <button 
+            onclick="closeTelegramModal()" 
+            class="w-full py-2.5 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition-colors"
+          >
+            확인 완료
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ➕ 수동 URL 추가 및 AI 분석 모달 -->
+  <div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+      
+      <!-- 모달 헤더 -->
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <i class="fa-solid fa-link text-sm"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">스마트 북마크 추가</h3>
+        </div>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 모달 바디 -->
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <!-- URL 입력 및 분석 버튼 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">북마크할 URL 링크</label>
+          <div class="flex gap-2">
+            <input 
+              type="url" 
+              id="inputUrl" 
+              placeholder="https://..." 
+              class="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white placeholder-slate-400"
+            >
+            <button 
+              id="analyzeBtn"
+              onclick="analyzeUrlInput()" 
+              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
+            >
+              <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+              <span>AI 분석</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- AI 분석 중 상태 -->
+        <div id="modalAnalyzing" class="hidden p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-xl text-center">
+          <div class="inline-block w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-2"></div>
+          <p class="text-xs font-semibold text-emerald-800 dark:text-emerald-300">AI가 웹페이지 메타데이터와 핵심 내용을 분석하고 있습니다...</p>
+        </div>
+
+        <!-- 썸네일 미리보기 -->
+        <div id="modalThumbPreviewWrap" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">썸네일 이미지</label>
+          <div class="relative w-full h-36 rounded-xl overflow-hidden bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750">
+            <img id="modalThumbImg" src="" alt="Thumbnail" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+        <!-- 제목 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">제목</label>
+          <input 
+            type="text" 
+            id="inputTitle" 
+            placeholder="제목이 자동으로 추출됩니다." 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white"
+          >
+        </div>
+
+        <!-- AI 3줄 요약 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">AI 3줄 요약</label>
+          <textarea 
+            id="inputSummary" 
+            rows="3" 
+            placeholder="• 핵심 내용이 자동으로 생성됩니다." 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white resize-none"
+          ></textarea>
+        </div>
+
+        <!-- 카테고리 & 태그 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">카테고리</label>
+            <select 
+              id="inputCategory" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white"
+            >
+              <option value="💻 개발/IT">💻 개발/IT</option>
+              <option value="📰 뉴스/트렌드">📰 뉴스/트렌드</option>
+              <option value="🎨 디자인/UI">🎨 디자인/UI</option>
+              <option value="📈 비즈니스/재테크">📈 비즈니스/재테크</option>
+              <option value="🏃 라이프/운동">🏃 라이프/운동</option>
+              <option value="💡 지식/인사이트">💡 지식/인사이트</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">태그 (쉼표로 구분)</label>
+            <input 
+              type="text" 
+              id="inputTags" 
+              placeholder="#개발, #자바스크립트" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white"
+            >
+          </div>
+        </div>
+
+        <!-- 개인 메모 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">나만의 한 줄 메모 (선택)</label>
+          <input 
+            type="text" 
+            id="inputMemo" 
+            placeholder="나중에 프로젝트 구현할 때 참고하기" 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white"
+          >
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 -->
+      <div class="px-6 py-4 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-end gap-2.5 shrink-0">
+        <button 
+          onclick="closeAddModal()" 
+          class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-xl transition-colors"
+        >
+          취소
+        </button>
+        <button 
+          id="submitAddBtn"
+          onclick="submitNewBookmark()" 
+          class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-check"></i>
+          <span>아카이브에 저장</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✏️ 메모 / 정보 수정 모달 -->
+  <div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-md w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">북마크 정보 수정</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="editItemId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">제목</label>
+          <input type="text" id="editTitle" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">카테고리</label>
+          <select id="editCategory" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white">
+            <option value="💻 개발/IT">💻 개발/IT</option>
+            <option value="📰 뉴스/트렌드">📰 뉴스/트렌드</option>
+            <option value="🎨 디자인/UI">🎨 디자인/UI</option>
+            <option value="📈 비즈니스/재테크">📈 비즈니스/재테크</option>
+            <option value="🏃 라이프/운동">🏃 라이프/운동</option>
+            <option value="💡 지식/인사이트">💡 지식/인사이트</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">태그 (쉼표로 구분)</label>
+          <input type="text" id="editTags" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">나만의 메모</label>
+          <textarea id="editMemo" rows="3" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 dark:text-white resize-none"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-end gap-2.5">
+        <button onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-xl transition-colors">취소</button>
+        <button onclick="submitEditBookmark()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔔 토스트 알림 컨테이너 -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ========================================== -->
+  <!-- 💻 자바스크립트 비즈니스 로직 -->
+  <!-- ========================================== -->
+  <script>
+    // ⚙️ GAS 백엔드 배포 API 엔드포인트 URL
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxaP0PGhbOHRb8B5vtYt62WXg8BmQITYPe-sVftVGFg0jrKYqfqP41D7vjAFdaaPjPz/exec";
+    
+    // 상태 관리 변수
+    let bookmarks = [];
+    let currentCategory = 'all';
+    let currentTag = '';
+    let searchQuery = '';
+    let currentSort = 'newest';
+    let analyzedCache = null;
+
+    // 초기화
+    document.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      loadLocalCache();
+      fetchBookmarks();
+    });
+
+    // 🌓 다크모드 관리
+    function initTheme() {
+      const isDark = localStorage.getItem('theme') !== 'light';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').className = "fa-solid fa-sun text-sm";
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').className = "fa-solid fa-moon text-sm";
+      }
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('themeIcon').className = isDark ? "fa-solid fa-sun text-sm" : "fa-solid fa-moon text-sm";
+    }
+
+    // 💾 로컬 스토리지 캐시 로드 (0ms 렌더링)
+    function loadLocalCache() {
+      try {
+        const cached = localStorage.getItem('smart_archive_bookmarks');
+        if (cached) {
+          bookmarks = JSON.parse(cached);
+          renderGrid();
+          updateCounts();
+        }
+      } catch (e) {}
+    }
+
+    function saveLocalCache() {
+      try {
+        localStorage.setItem('smart_archive_bookmarks', JSON.stringify(bookmarks));
+      } catch (e) {}
+    }
+
+    // 🔄 북마크 데이터 서버 동기화
+    async function fetchBookmarks(isManualRefresh = false) {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+      
+      if (bookmarks.length === 0) {
+        document.getElementById('loadingState').classList.remove('hidden');
+      }
+
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=getBookmarks&_t=${Date.now()}`);
+        const data = await res.json();
+        
+        if (data.success && Array.isArray(data.bookmarks)) {
+          bookmarks = data.bookmarks;
+          saveLocalCache();
+          renderGrid();
+          updateCounts();
+          if (isManualRefresh) showToast("✅ 최신 북마크 목록을 동기화했습니다.");
+        }
+      } catch (err) {
+        console.error("fetchBookmarks error:", err);
+        if (isManualRefresh) showToast("⚠️ 서버 연결 실패: 캐시된 데이터를 표시합니다.", "error");
+      } finally {
+        document.getElementById('loadingState').classList.add('hidden');
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    // 🎨 Masonry Grid 렌더링
+    function renderGrid() {
+      const container = document.getElementById('masonryContainer');
+      const emptyState = document.getElementById('emptyState');
+      
+      let filtered = [...bookmarks];
+
+      // 1. 카테고리 필터
+      if (currentCategory === 'pinned') {
+        filtered = filtered.filter(b => b.pinned);
+      } else if (currentCategory === 'unread') {
+        filtered = filtered.filter(b => !b.read);
+      } else if (currentCategory !== 'all') {
+        filtered = filtered.filter(b => b.category === currentCategory);
+      }
+
+      // 2. 태그 필터
+      if (currentTag) {
+        filtered = filtered.filter(b => {
+          if (!b.tags) return false;
+          const tagStr = Array.isArray(b.tags) ? b.tags.join(" ") : String(b.tags);
+          return tagStr.toLowerCase().includes(currentTag.toLowerCase());
+        });
+      }
+
+      // 3. 검색어 필터
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(b => {
+          const title = (b.title || "").toLowerCase();
+          const summary = (b.summary || "").toLowerCase();
+          const domain = (b.domain || "").toLowerCase();
+          const memo = (b.memo || "").toLowerCase();
+          const tags = Array.isArray(b.tags) ? b.tags.join(" ").toLowerCase() : (b.tags || "").toLowerCase();
+          return title.includes(q) || summary.includes(q) || domain.includes(q) || memo.includes(q) || tags.includes(q);
+        });
+      }
+
+      // 4. 정렬
+      if (currentSort === 'newest') {
+        // 이미 최신순
+      } else if (currentSort === 'oldest') {
+        filtered.reverse();
+      } else if (currentSort === 'title') {
+        filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      } else if (currentSort === 'pinned') {
+        filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = filtered.map(item => createCardHtml(item)).join('');
+    }
+
+    // 📇 카드 HTML 컴포넌트 생성
+    function createCardHtml(b) {
+      const isPinned = b.pinned;
+      const isRead = b.read;
+      const domain = b.domain || (b.url ? b.url.replace(/^https?:\/\//, '').split('/')[0] : '');
+      const favicon = b.favicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      
+      // 태그 배열 처리
+      const tagList = Array.isArray(b.tags) ? b.tags : (b.tags ? String(b.tags).split(',').map(t=>t.trim()) : []);
+
+      // 썸네일 이미지 영역
+      let thumbnailHtml = '';
+      if (b.thumbnail && b.thumbnail.startsWith('http')) {
+        thumbnailHtml = `
+          <div class="relative w-full h-44 overflow-hidden bg-slate-100 dark:bg-dark-800">
+            <img src="${escapeHtml(b.thumbnail)}" alt="Thumbnail" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.parentElement.style.display='none'">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </div>
+        `;
+      }
+
+      // 요약 불릿 포인트 파싱
+      let summaryHtml = '';
+      if (b.summary) {
+        const bullets = b.summary.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        summaryHtml = `
+          <div class="mt-3 p-3 bg-slate-50 dark:bg-dark-800/80 rounded-xl border border-slate-100 dark:border-dark-750/50 space-y-1.5">
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+              <i class="fa-solid fa-sparkles text-[10px]"></i>
+              <span>AI 핵심 요약</span>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1 leading-relaxed">
+              ${bullets.map(bullet => `
+                <div class="flex items-start gap-1.5">
+                  <span class="text-emerald-500 font-bold leading-none mt-0.5">•</span>
+                  <span>${escapeHtml(bullet.replace(/^[•\-\*]\s*/, ''))}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // 사용자 메모
+      let memoHtml = '';
+      if (b.memo) {
+        memoHtml = `
+          <div class="mt-2.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border-l-2 border-amber-400 text-amber-900 dark:text-amber-200 text-xs rounded-r-lg">
+            <span class="font-bold mr-1">📝</span> ${escapeHtml(b.memo)}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-dark-600 transition-all duration-200 overflow-hidden flex flex-col relative" id="card-${b.id}">
+          
+          <!-- 상단 썸네일 -->
+          ${thumbnailHtml}
+
+          <!-- 본문 콘텐츠 -->
+          <div class="p-4 flex-1 flex flex-col">
+            
+            <!-- 메타 헤더: 파비콘 + 도메인 + 카테고리 뱃지 -->
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <img src="${favicon}" alt="" class="w-4 h-4 rounded-sm shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3588/3588658.png'">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">${escapeHtml(domain)}</span>
+              </div>
+              <span class="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 rounded-md shrink-0">
+                ${escapeHtml(b.category || '기타')}
+              </span>
+            </div>
+
+            <!-- 북마크 제목 (원클릭 외부 링크 이동) -->
+            <a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 leading-snug line-clamp-2 transition-colors mb-1">
+              ${escapeHtml(b.title || '제목 없음')}
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1 opacity-0 group-hover:opacity-80 transition-opacity"></i>
+            </a>
+
+            <!-- AI 요약 박스 -->
+            ${summaryHtml}
+
+            <!-- 사용자 메모 -->
+            ${memoHtml}
+
+            <!-- 해시태그 목록 -->
+            ${tagList.length > 0 ? `
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                ${tagList.map(tag => `
+                  <button onclick="setTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium rounded-md border border-emerald-200/60 dark:border-emerald-800/40 transition-colors">
+                    ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- 하단 인터랙션 툴바 -->
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-400">
+              <span class="text-[11px] text-slate-400 dark:text-slate-500">${formatRelativeTime(b.createdAt)}</span>
+              
+              <div class="flex items-center gap-1">
+                <!-- 즐겨찾기 토글 -->
+                <button onclick="togglePin('${b.id}')" title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                  <i class="${isPinned ? 'fa-solid' : 'fa-regular'} fa-star text-sm"></i>
+                </button>
+
+                <!-- 읽음 여부 토글 -->
+                <button onclick="toggleRead('${b.id}')" title="${isRead ? '안 읽음으로 표시' : '읽음으로 표시'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isRead ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                  <i class="${isRead ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'} text-sm"></i>
+                </button>
+
+                <!-- URL 복사 -->
+                <button onclick="copyBookmarkUrl('${escapeHtml(b.url)}')" title="URL 복사" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <i class="fa-regular fa-copy text-sm"></i>
+                </button>
+
+                <!-- 수정 모달 -->
+                <button onclick="openEditModal('${b.id}')" title="메모/정보 수정" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <i class="fa-regular fa-pen-to-square text-sm"></i>
+                </button>
+
+                <!-- 삭제 -->
+                <button onclick="deleteBookmark('${b.id}')" title="북마크 삭제" class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors">
+                  <i class="fa-regular fa-trash-can text-sm"></i>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    // ⚡ Optimistic Pin Toggle
+    async function togglePin(id) {
+      const item = bookmarks.find(b => b.id === id);
+      if (!item) return;
+      
+      item.pinned = !item.pinned;
+      saveLocalCache();
+      renderGrid();
+      updateCounts();
+      showToast(item.pinned ? "⭐ 즐겨찾기에 등록되었습니다." : "즐겨찾기가 해제되었습니다.");
+
+      try {
+        await fetch(`${GAS_API_URL}?action=togglePin&id=${id}`);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    // ⚡ Optimistic Read Toggle
+    async function toggleRead(id) {
+      const item = bookmarks.find(b => b.id === id);
+      if (!item) return;
+      
+      item.read = !item.read;
+      saveLocalCache();
+      renderGrid();
+      updateCounts();
+      showToast(item.read ? "✅ 읽음으로 표시되었습니다." : "📥 읽지 않음으로 변경되었습니다.");
+
+      try {
+        await fetch(`${GAS_API_URL}?action=toggleRead&id=${id}`);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    // 🗑️ 북마크 삭제
+    async function deleteBookmark(id) {
+      if (!confirm("이 북마크를 아카이브에서 삭제하시겠습니까?")) return;
+      
+      bookmarks = bookmarks.filter(b => b.id !== id);
+      saveLocalCache();
+      renderGrid();
+      updateCounts();
+      showToast("🗑️ 북마크가 삭제되었습니다.");
+
+      try {
+        await fetch(`${GAS_API_URL}?action=deleteBookmark&id=${id}`);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    // 📋 URL 복사
+    function copyBookmarkUrl(url) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url);
+      } else {
+        const t = document.createElement("textarea");
+        t.value = url;
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand("copy");
+        document.body.removeChild(t);
+      }
+      showToast("📋 링크 URL이 클립보드에 복사되었습니다!");
+    }
+
+    // 🔍 검색 핸들러
+    function handleSearch(val) {
+      searchQuery = val.trim();
+      const desktopClear = document.getElementById('clearSearchBtnDesktop');
+      const mobileClear = document.getElementById('clearSearchBtnMobile');
+      
+      if (desktopClear) desktopClear.classList.toggle('hidden', !searchQuery);
+      if (mobileClear) mobileClear.classList.toggle('hidden', !searchQuery);
+      
+      // 싱크 맞추기
+      const d = document.getElementById('searchInputDesktop');
+      const m = document.getElementById('searchInputMobile');
+      if (d && d.value !== val) d.value = val;
+      if (m && m.value !== val) m.value = val;
+
+      renderGrid();
+    }
+
+    function clearSearch() {
+      searchQuery = '';
+      const d = document.getElementById('searchInputDesktop');
+      const m = document.getElementById('searchInputMobile');
+      if (d) d.value = '';
+      if (m) m.value = '';
+      document.getElementById('clearSearchBtnDesktop').classList.add('hidden');
+      document.getElementById('clearSearchBtnMobile').classList.add('hidden');
+      renderGrid();
+    }
+
+    // 🏷️ 카테고리 필터
+    function setCategoryFilter(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = "cat-btn active px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap bg-emerald-600 text-white shadow-sm transition-colors";
+        } else {
+          btn.className = "cat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors";
+        }
+      });
+      renderGrid();
+    }
+
+    // 🏷️ 태그 필터
+    function setTagFilter(tag) {
+      currentTag = tag;
+      const bar = document.getElementById('activeTagBar');
+      const badge = document.getElementById('activeTagBadge');
+      bar.classList.remove('hidden');
+      badge.textContent = tag;
+      renderGrid();
+    }
+
+    function clearTagFilter() {
+      currentTag = '';
+      document.getElementById('activeTagBar').classList.add('hidden');
+      renderGrid();
+    }
+
+    function resetFilters() {
+      clearSearch();
+      clearTagFilter();
+      setCategoryFilter('all');
+    }
+
+    function handleSortChange(sortVal) {
+      currentSort = sortVal;
+      renderGrid();
+    }
+
+    // 📊 카운트 업데이트
+    function updateCounts() {
+      const all = bookmarks.length;
+      const pinned = bookmarks.filter(b => b.pinned).length;
+      const unread = bookmarks.filter(b => !b.read).length;
+
+      const cAll = document.getElementById('countAll');
+      const cPinned = document.getElementById('countPinned');
+      const cUnread = document.getElementById('countUnread');
+
+      if (cAll) cAll.textContent = `(${all})`;
+      if (cPinned) cPinned.textContent = `(${pinned})`;
+      if (cUnread) cUnread.textContent = `(${unread})`;
+    }
+
+    // ➕ 추가 모달
+    function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      document.getElementById('inputUrl').value = '';
+      document.getElementById('inputTitle').value = '';
+      document.getElementById('inputSummary').value = '';
+      document.getElementById('inputTags').value = '';
+      document.getElementById('inputMemo').value = '';
+      document.getElementById('modalThumbPreviewWrap').classList.add('hidden');
+      document.getElementById('modalAnalyzing').classList.add('hidden');
+      analyzedCache = null;
+      setTimeout(() => document.getElementById('inputUrl').focus(), 100);
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+    }
+
+    // 🪄 AI URL 분석
+    async function analyzeUrlInput() {
+      const url = document.getElementById('inputUrl').value.trim();
+      if (!url || !url.startsWith('http')) {
+        alert("올바른 URL 주소를 입력해주세요 (예: https://...)");
+        return;
+      }
+
+      const analyzingBox = document.getElementById('modalAnalyzing');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      analyzingBox.classList.remove('hidden');
+      analyzeBtn.disabled = true;
+      analyzeBtn.classList.add('opacity-50');
+
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=analyzeUrl&url=${encodeURIComponent(url)}`);
+        const result = await res.json();
+
+        if (result.success && result.data) {
+          analyzedCache = result.data;
+          document.getElementById('inputTitle').value = result.data.title || '';
+          document.getElementById('inputSummary').value = result.data.summary || '';
+          document.getElementById('inputCategory').value = result.data.category || '기타';
+          
+          const tagsStr = Array.isArray(result.data.tags) ? result.data.tags.join(', ') : (result.data.tags || '');
+          document.getElementById('inputTags').value = tagsStr;
+
+          if (result.data.thumbnail) {
+            document.getElementById('modalThumbImg').src = result.data.thumbnail;
+            document.getElementById('modalThumbPreviewWrap').classList.remove('hidden');
+          }
+          showToast("✨ AI 분석이 완료되었습니다!");
+        } else {
+          showToast("⚠️ 웹페이지 분석에 실패했습니다. 직접 입력해 주세요.", "error");
+        }
+      } catch (e) {
+        console.error(e);
+        showToast("⚠️ 분석 중 오류가 발생했습니다.", "error");
+      } finally {
+        analyzingBox.classList.add('hidden');
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.remove('opacity-50');
+      }
+    }
+
+    // 💾 새 북마크 저장 제출
+    async function submitNewBookmark() {
+      const url = document.getElementById('inputUrl').value.trim();
+      const title = document.getElementById('inputTitle').value.trim();
+      const summary = document.getElementById('inputSummary').value.trim();
+      const category = document.getElementById('inputCategory').value;
+      const tags = document.getElementById('inputTags').value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      const memo = document.getElementById('inputMemo').value.trim();
+
+      if (!url) {
+        alert("URL을 입력해 주세요.");
+        return;
+      }
+
+      const domain = (analyzedCache && analyzedCache.domain) ? analyzedCache.domain : url.replace(/^https?:\/\//, '').split('/')[0];
+      const favicon = (analyzedCache && analyzedCache.favicon) ? analyzedCache.favicon : `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      const thumbnail = (analyzedCache && analyzedCache.thumbnail) ? analyzedCache.thumbnail : '';
+
+      const newBookmark = {
+        id: "bm_" + Date.now(),
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        title: title || domain || "새 북마크",
+        url: url,
+        domain: domain,
+        favicon: favicon,
+        thumbnail: thumbnail,
+        summary: summary,
+        tags: tags,
+        category: category,
+        pinned: false,
+        read: false,
+        memo: memo,
+        userId: "web"
+      };
+
+      // Optimistic 추가
+      bookmarks.unshift(newBookmark);
+      saveLocalCache();
+      renderGrid();
+      updateCounts();
+      closeAddModal();
+      showToast("🎉 새 북마크가 아카이브에 등록되었습니다!");
+
+      try {
+        await fetch(`${GAS_API_URL}?action=addBookmark&data=${encodeURIComponent(JSON.stringify(newBookmark))}`);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // ✏️ 수정 모달
+    function openEditModal(id) {
+      const item = bookmarks.find(b => b.id === id);
+      if (!item) return;
+
+      document.getElementById('editItemId').value = id;
+      document.getElementById('editTitle').value = item.title || '';
+      document.getElementById('editCategory').value = item.category || '기타';
+      document.getElementById('editTags').value = Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '');
+      document.getElementById('editMemo').value = item.memo || '';
+
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    async function submitEditBookmark() {
+      const id = document.getElementById('editItemId').value;
+      const item = bookmarks.find(b => b.id === id);
+      if (!item) return;
+
+      const title = document.getElementById('editTitle').value.trim();
+      const category = document.getElementById('editCategory').value;
+      const tags = document.getElementById('editTags').value.split(',').map(t=>t.trim()).filter(t=>t.length>0);
+      const memo = document.getElementById('editMemo').value.trim();
+
+      item.title = title;
+      item.category = category;
+      item.tags = tags;
+      item.memo = memo;
+
+      saveLocalCache();
+      renderGrid();
+      closeEditModal();
+      showToast("✏️ 북마크 정보가 수정되었습니다.");
+
+      try {
+        const updates = { title, category, tags, memo };
+        await fetch(`${GAS_API_URL}?action=updateBookmark&id=${id}&updates=${encodeURIComponent(JSON.stringify(updates))}`);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 텔레그램 모달
+    function openTelegramModal() {
+      document.getElementById('telegramModal').classList.remove('hidden');
+    }
+    function closeTelegramModal() {
+      document.getElementById('telegramModal').classList.add('hidden');
+    }
+
+    // 🔔 토스트 메시지
+    function showToast(message, type = "success") {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const isError = type === "error";
+      
+      toast.className = `px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-semibold flex items-center gap-2 pointer-events-auto transition-all transform duration-300 translate-y-2 opacity-0 ${
+        isError 
+          ? 'bg-rose-500 text-white border-rose-600' 
+          : 'bg-slate-900 dark:bg-emerald-600 text-white border-slate-800 dark:border-emerald-500'
+      }`;
+      toast.innerHTML = message;
+
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // 헬퍼: 상대 시간 포맷
+    function formatRelativeTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      if (isNaN(date)) return dateStr;
+      
+      const now = new Date();
+      const diffSec = Math.floor((now - date) / 1000);
+      
+      if (diffSec < 60) return "방금 전";
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}분 전`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
+      if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}일 전`;
+      return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
