@@ -1,2 +1,22 @@
-# smart-archive-app
-Hoarder-style AI Smart Bookmark &amp; Archive Web App with Telegram Assistant Sync
+# 📦 AI Smart Archive (스마트 북마크 & 지식 보관소)
+
+> **호더(Hoarder)** 스타일의 AI 기반 스마트 북마크 웹앱입니다.
+> 텔레그램 AI 비서봇(`04_AI비서`)과 실시간으로 연동되어, 채팅창에 링크만 공유하면 제미나이 AI가 자동으로 메타데이터 추출, 핵심 3줄 요약, 추천 카테고리/해시태그를 생성하고 원클릭 승인 카드를 통해 영구 보관합니다.
+
+---
+
+## 🌟 주요 기능
+
+- 📱 **텔레그램 봇 실시간 연동**: 링크(뉴스, 릴스, 유튜브, IT 기술 블로그) 전송 시 AI가 자동 분석 후 `[✅ 아카이브에 저장]` 인라인 승인 버튼 제공.
+- 🎨 **핀터레스트/호더 스타일 Masonry 카드 뷰**: 썸네일, 파비콘, 도메인 뱃지, 3줄 AI 요약 불릿, 해시태그 칩, 반응형 다단 레이아웃.
+- 🌓 **다크 모드 / 라이트 모드**: 사용자의 시스템 설정 또는 수동 전환 지원 (영구 저장).
+- 🔍 **초고속 실시간 검색 & 필터링**: 제목, 본문 요약, 도메인, 개인 메모, 해시태그 실시간 검색 및 카테고리 탭.
+- 📌 **즐겨찾기(Pin) & 읽음(Read) 관리**: 0ms 낙관적 UI 업데이트(Optimistic UI) 및 구글 시트 클라우드 DB 영구 동기화.
+- ➕ **직접 URL 추가 & AI 분석 모달**: 웹앱 내에서 URL 입력 시 즉각적인 AI 메타데이터 추출 및 수동 등록.
+
+---
+
+## 🌐 라이브 웹앱 주소
+
+- **GitHub Pages**: [https://mi2tall-commits.github.io/smart-archive-app/](https://mi2tall-commits.github.io/smart-archive-app/)
+- **백엔드 클라우드**: Google Apps Script & Google Spreadsheet DB
