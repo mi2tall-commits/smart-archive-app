@@ -8,6 +8,8 @@
   
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- QRCode.js for Keeplea WiFi QR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -109,6 +111,24 @@
       overflow: hidden;
     }
   </style>
+
+  <style>
+    @keyframes scanLine {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 96%; opacity: 0.8; }
+    }
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #14b8a6, #2dd4bf, transparent);
+      box-shadow: 0 0 15px #14b8a6;
+      animation: scanLine 2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+    }
+  </style>
+
 </head>
 <body class="bg-slate-50 dark:bg-dark-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
@@ -230,6 +250,16 @@
           <i class="fa-solid fa-wand-magic-sparkles text-xs text-violet-500"></i>
           <span>AI 프롬프트 보관소</span>
           <span id="badgePromptCount" class="px-1.5 py-0.5 text-[10px] font-semibold bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 rounded-full">0</span>
+        </button>
+
+        <button 
+          id="tabBtnKeeplea" 
+          onclick="switchMainTab('keeplea')" 
+          class="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+        >
+          <i class="fa-solid fa-boxes-stacked text-xs text-teal-500"></i>
+          <span>킵리아 인벤토리</span>
+          <span id="badgeKeepleaCount" class="px-1.5 py-0.5 text-[10px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 rounded-full">0</span>
         </button>
       </div>
     </div>
@@ -446,6 +476,195 @@
     </main>
 
   </div><!-- /#promptView -->
+
+  <!-- ========================================== -->
+  <!-- 🗂️ [킵리아 인벤토리] 뷰 영역 -->
+  <!-- ========================================== -->
+  <div id="keepleaView" class="hidden">
+    
+    <!-- 킵리아 카테고리 필터 바 -->
+    <section class="bg-white/60 dark:bg-dark-850/60 border-b border-slate-200 dark:border-dark-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+        <div class="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+          
+          <!-- 동적 카테고리 탭 목록 -->
+          <div class="flex items-center gap-1.5 flex-nowrap" id="keepleaCategoryTabsContainer">
+            <button onclick="selectKeepleaCategory('전체')" class="keeplea-cat-btn active px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-teal-600 text-white shadow-sm transition-colors" data-kcat="전체">
+              🌐 전체 <span id="keepleaCountAll" class="ml-1 opacity-80">(0)</span>
+            </button>
+          </div>
+
+          <!-- 정렬 & 액션 버튼 -->
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="triggerKeepleaCamera()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95">
+              <i class="fa-solid fa-camera text-xs"></i>
+              <span class="hidden sm:inline">촬영 등록</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 킵리아 메인 콘텐츠 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      
+      <!-- 빈 상태 (Empty State) -->
+      <div id="keepleaEmptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 rounded-2xl bg-teal-50 dark:bg-dark-800 border border-teal-200 dark:border-dark-750 flex items-center justify-center text-teal-500 text-3xl mb-4 shadow-sm">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">보관된 인벤토리 물건이 없습니다</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed">
+          가전제품 모델명 라벨, 공유기 와이파이 비번, 계약서/영수증 PDF, 음성 녹음을 올려보세요!<br>
+          AI가 사진 속 텍스트와 핵심 정보를 0.05초 만에 추출하여 스마트 인벤토리에 정리합니다.
+        </p>
+        <div class="flex items-center gap-3">
+          <button onclick="triggerKeepleaCamera()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-md shadow-teal-600/20 transition-all">
+            <i class="fa-solid fa-camera mr-1.5"></i> 첫 사진 촬영하기
+          </button>
+          <button onclick="triggerKeepleaDoc()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold rounded-xl transition-all">
+            <i class="fa-solid fa-file-pdf mr-1.5 text-rose-500"></i> 문서/PDF 업로드
+          </button>
+        </div>
+      </div>
+
+      <!-- 아이템 카드 그리드 -->
+      <div id="keepleaItemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- JS 동적 렌더링 -->
+      </div>
+
+    </main>
+
+    <!-- 하단 플로팅 액션 바 (Keeplea 모드 전용) -->
+    <div id="keepleaFloatingBar" class="fixed bottom-6 inset-x-0 z-30 flex justify-center px-4 pointer-events-none transition-all">
+      <div class="bg-slate-900/90 dark:bg-dark-900/95 backdrop-blur-md text-white p-1.5 px-2 rounded-2xl shadow-2xl border border-slate-700/60 dark:border-dark-700 flex items-center gap-1.5 pointer-events-auto">
+        <button onclick="triggerKeepleaCamera()" class="flex items-center gap-1.5 px-3.5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl text-xs font-bold hover:brightness-110 shadow-md shadow-teal-500/25 active:scale-95 transition-all">
+          <i class="fa-solid fa-camera text-xs"></i>
+          <span>촬영</span>
+        </button>
+        <button onclick="triggerKeepleaGallery()" class="flex items-center gap-1 px-2.5 py-2 bg-slate-800 text-slate-200 hover:text-white rounded-xl text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+          <i class="fa-regular fa-image text-xs"></i>
+          <span class="hidden sm:inline">사진</span>
+        </button>
+        <button onclick="triggerKeepleaDoc()" class="flex items-center gap-1 px-2.5 py-2 bg-slate-800 text-slate-200 hover:text-white rounded-xl text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+          <i class="fa-regular fa-file-lines text-xs text-rose-400"></i>
+          <span class="text-xs font-semibold">문서/PDF</span>
+        </button>
+        <button onclick="triggerKeepleaAudio()" class="flex items-center gap-1 px-2.5 py-2 bg-indigo-900/70 text-indigo-200 hover:text-white rounded-xl text-xs font-medium hover:bg-indigo-800 active:scale-95 transition-all">
+          <i class="fa-solid fa-microphone text-xs text-indigo-300"></i>
+          <span class="text-xs font-semibold">음성메모</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 숨겨진 멀티모달 파일 인풋들 -->
+    <input type="file" id="keeplea-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleKeepleaFileSelected(event, 'image')">
+    <input type="file" id="keeplea-gallery-input" accept="image/*" class="hidden" onchange="handleKeepleaFileSelected(event, 'image')">
+    <input type="file" id="keeplea-doc-input" accept="application/pdf,.pdf,text/plain,.txt,text/csv,.csv,.docx,.xlsx" class="hidden" onchange="handleKeepleaFileSelected(event, 'doc')">
+    <input type="file" id="keeplea-audio-input" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" class="hidden" onchange="handleKeepleaFileSelected(event, 'audio')">
+
+  </div><!-- /#keepleaView -->
+
+  <!-- Keeplea AI 분석 중 스캐닝 모달 -->
+  <div id="keepleaScanModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-850 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative overflow-hidden border border-slate-200 dark:border-dark-750">
+      <div id="keepleaScanPreviewContainer" class="relative w-44 h-44 mx-auto mb-4 rounded-2xl overflow-hidden bg-slate-100 dark:bg-dark-900 border border-slate-200 dark:border-dark-800 flex items-center justify-center shadow-inner">
+        <img id="keepleaScanPreviewImg" src="" class="w-full h-full object-cover">
+        <div id="keepleaScanPlaceholder" class="hidden flex flex-col items-center justify-center p-4 text-center">
+          <span id="keepleaScanPlaceholderIcon" class="text-5xl mb-2">📄</span>
+          <span id="keepleaScanPlaceholderName" class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">파일명</span>
+        </div>
+        <div class="scanner-line"></div>
+        <div class="absolute inset-0 bg-teal-500/10 pointer-events-none"></div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-xs font-bold animate-pulse">
+          <i class="fa-solid fa-sparkles text-[10px]"></i> Gemini Multimodal Vision
+        </div>
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">AI 인벤토리 분석 중...</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          라벨, 시리얼 넘버, 와이파이 정보, 텍스트를 추출하고 있습니다.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keeplea 아이템 상세 / 수정 모달 -->
+  <div id="keepleaDetailModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in zoom-in duration-200">
+      <div class="px-5 py-3.5 border-b border-slate-100 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-900/30">
+        <div class="flex items-center gap-2 min-w-0 pr-2">
+          <span id="keepleaDetailCatBadge" class="px-2.5 py-1 text-xs font-bold rounded-lg shrink-0 bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300">카테고리</span>
+          <h3 id="keepleaDetailTitle" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">아이템 명칭</h3>
+        </div>
+        <button onclick="closeKeepleaDetailModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-5 overflow-y-auto space-y-4 flex-1 text-xs">
+        <div id="keepleaDetailImageWrap" class="rounded-xl overflow-hidden max-h-56 bg-slate-100 dark:bg-dark-900 flex items-center justify-center border border-slate-200 dark:border-dark-800">
+          <img id="keepleaDetailImg" src="" class="max-h-56 w-auto object-contain">
+        </div>
+        <div id="keepleaDetailWifiBox" class="hidden p-3.5 bg-teal-50 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-900/40">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-teal-800 dark:text-teal-300">📶 와이파이 접속 정보 감지</span>
+              <p id="keepleaDetailWifiSsid" class="text-xs text-slate-700 dark:text-slate-300 font-mono mt-0.5">SSID: -</p>
+            </div>
+            <button onclick="showKeepleaWifiQrFromDetail()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-bold text-xs shadow-sm">
+              QR코드 보기
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">명칭 / 제품명</label>
+          <input type="text" id="keepleaEditTitle" class="w-full p-2 bg-slate-50 dark:bg-dark-800 rounded-lg border border-slate-200 dark:border-dark-750 text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">AI 요약 / 핵심 정보</label>
+          <textarea id="keepleaEditSummary" rows="3" class="w-full p-2 bg-slate-50 dark:bg-dark-800 rounded-lg border border-slate-200 dark:border-dark-750 text-slate-900 dark:text-white leading-relaxed resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">카테고리</label>
+            <input type="text" id="keepleaEditCategory" class="w-full p-2 bg-slate-50 dark:bg-dark-800 rounded-lg border border-slate-200 dark:border-dark-750 text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">해시태그</label>
+            <input type="text" id="keepleaEditTags" class="w-full p-2 bg-slate-50 dark:bg-dark-800 rounded-lg border border-slate-200 dark:border-dark-750 text-slate-900 dark:text-white">
+          </div>
+        </div>
+      </div>
+      <div class="px-5 py-3 border-t border-slate-100 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-between shrink-0">
+        <button onclick="deleteKeepleaItemFromModal()" class="text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 text-xs">
+          <i class="fa-regular fa-trash-can"></i> 삭제
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeKeepleaDetailModal()" class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-800">닫기</button>
+          <button onclick="saveKeepleaItemEdit()" class="px-4 py-1.5 text-xs bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg shadow-sm">저장 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keeplea 와이파이 QR 모달 -->
+  <div id="keepleaWifiQrModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl border border-slate-200 dark:border-dark-750">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+          <i class="fa-solid fa-wifi text-teal-600"></i> 와이파이 QR 코드
+        </h3>
+        <button onclick="closeKeepleaWifiQrModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="keepleaQrContainer" class="w-48 h-48 mx-auto bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-center mb-3"></div>
+      <p id="keepleaQrSsidLabel" class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate mb-1">SSID: -</p>
+      <p class="text-[11px] text-slate-400">카메라로 스캔하면 즉시 와이파이에 연결됩니다</p>
+    </div>
+  </div>
+
 
 
   <!-- 📱 텔레그램 연동 가이드 모달 -->
@@ -1674,6 +1893,7 @@
         } catch(e) {}
       }
       loadPromptLocalCache();
+      loadKeepleaItems();
       checkUrlTabParam();
       updateMainCounts();
     });
@@ -1685,6 +1905,8 @@
         const tab = urlParams.get('tab');
         if (tab === 'prompt') {
           switchMainTab('prompt');
+        } else if (tab === 'keeplea') {
+          switchMainTab('keeplea');
         }
       } catch(e) {}
     }
@@ -1694,37 +1916,51 @@
       currentMainTab = targetTab;
       const bView = document.getElementById('bookmarkView');
       const pView = document.getElementById('promptView');
+      const kView = document.getElementById('keepleaView');
       const tBtnB = document.getElementById('tabBtnBookmark');
       const tBtnP = document.getElementById('tabBtnPrompt');
+      const tBtnK = document.getElementById('tabBtnKeeplea');
       const addBtn = document.getElementById('dynamicAddBtn');
       const addText = document.getElementById('dynamicAddText');
       const searchDesk = document.getElementById('searchInputDesktop');
       const searchMob = document.getElementById('searchInputMobile');
+      const kFloat = document.getElementById('keepleaFloatingBar');
+
+      // Reset all views & tabs
+      bView.classList.add('hidden');
+      pView.classList.add('hidden');
+      if (kView) kView.classList.add('hidden');
+      if (kFloat) kFloat.classList.add('hidden');
+
+      tBtnB.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
+      tBtnP.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
+      if (tBtnK) tBtnK.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
 
       if (targetTab === 'bookmark') {
         bView.classList.remove('hidden');
-        pView.classList.add('hidden');
-        
         tBtnB.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 transition-colors";
-        tBtnP.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
-
         addBtn.className = "inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95";
         addText.textContent = "링크 추가";
         if (searchDesk) searchDesk.placeholder = "제목, 요약 내용, #태그, 도메인 검색...";
         if (searchMob) searchMob.placeholder = "제목, 요약, #태그 검색...";
         renderGrid();
-      } else {
-        bView.classList.add('hidden');
+      } else if (targetTab === 'prompt') {
         pView.classList.remove('hidden');
-        
         tBtnP.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-violet-600 text-violet-600 dark:text-violet-400 transition-colors";
-        tBtnB.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
-
         addBtn.className = "inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 active:bg-violet-700 rounded-xl shadow-md shadow-violet-600/20 transition-all transform active:scale-95";
         addText.textContent = "프롬프트 추가";
         if (searchDesk) searchDesk.placeholder = "프롬프트 제목, 본문, #태그, AI모델 검색...";
         if (searchMob) searchMob.placeholder = "프롬프트 검색...";
         renderPromptGrid();
+      } else if (targetTab === 'keeplea') {
+        if (kView) kView.classList.remove('hidden');
+        if (kFloat) kFloat.classList.remove('hidden');
+        if (tBtnK) tBtnK.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-teal-600 text-teal-600 dark:text-teal-400 transition-colors";
+        addBtn.className = "inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-500 active:bg-teal-700 rounded-xl shadow-md shadow-teal-600/20 transition-all transform active:scale-95";
+        addText.textContent = "인벤토리 등록";
+        if (searchDesk) searchDesk.placeholder = "물건명, 시리얼, 와이파이 비번, 계약서 검색...";
+        if (searchMob) searchMob.placeholder = "인벤토리 검색...";
+        renderKeepleaItems();
       }
     }
 
@@ -1732,8 +1968,10 @@
     function handleDynamicAdd() {
       if (currentMainTab === 'bookmark') {
         openAddModal();
-      } else {
+      } else if (currentMainTab === 'prompt') {
         openAddPromptModal();
+      } else if (currentMainTab === 'keeplea') {
+        triggerKeepleaCamera();
       }
     }
 
@@ -2334,6 +2572,10 @@
 
     // 📊 메인 뱃지 및 카운트 업데이트
     function updateMainCounts() {
+      // 0. 킵리아 인벤토리 카운트
+      const kBadge = document.getElementById('badgeKeepleaCount');
+      if (kBadge) kBadge.textContent = keepleaItems.length;
+
       // 1. 북마크 카운트
       const bCount = bookmarks.length;
       const bBadge = document.getElementById('badgeBookmarkCount');
@@ -2382,6 +2624,8 @@
       }
       if (currentMainTab === 'prompt') {
         renderPromptGrid();
+      } else if (currentMainTab === 'keeplea') {
+        renderKeepleaItems();
       }
     };
 
@@ -2392,8 +2636,436 @@
       }
       if (currentMainTab === 'prompt') {
         renderPromptGrid();
+      } else if (currentMainTab === 'keeplea') {
+        renderKeepleaItems();
       }
     };
+
+
+    // ==========================================
+    // 🗂️ 킵리아 (Keeplea) 인벤토리 시스템 로직
+    // ==========================================
+    let keepleaItems = [];
+    let currentKeepleaCategory = '전체';
+    let activeKeepleaItemId = null;
+    let keepleaQrInstance = null;
+
+    const KEEPLEA_IDB_NAME = "KeepleaDB";
+    const KEEPLEA_STORE_NAME = "items";
+
+    function getKeepleaIdb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(KEEPLEA_IDB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(KEEPLEA_STORE_NAME)) {
+            db.createObjectStore(KEEPLEA_STORE_NAME, { keyPath: "id" });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function loadKeepleaItems() {
+      try {
+        const db = await getKeepleaIdb();
+        const tx = db.transaction(KEEPLEA_STORE_NAME, "readonly");
+        const req = tx.objectStore(KEEPLEA_STORE_NAME).getAll();
+        req.onsuccess = () => {
+          keepleaItems = req.result || [];
+          renderKeepleaCategoryTabs();
+          renderKeepleaItems();
+          updateMainCounts();
+        };
+      } catch(e) {
+        const local = localStorage.getItem("keeplea_local_items");
+        keepleaItems = local ? JSON.parse(local) : [];
+        renderKeepleaCategoryTabs();
+        renderKeepleaItems();
+        updateMainCounts();
+      }
+    }
+
+    async function saveKeepleaItem(item) {
+      try {
+        const db = await getKeepleaIdb();
+        const tx = db.transaction(KEEPLEA_STORE_NAME, "readwrite");
+        tx.objectStore(KEEPLEA_STORE_NAME).put(item);
+      } catch(e) {
+        localStorage.setItem("keeplea_local_items", JSON.stringify(keepleaItems));
+      }
+    }
+
+    async function deleteKeepleaItem(id) {
+      try {
+        const db = await getKeepleaIdb();
+        const tx = db.transaction(KEEPLEA_STORE_NAME, "readwrite");
+        tx.objectStore(KEEPLEA_STORE_NAME).delete(id);
+      } catch(e) {}
+    }
+
+    function triggerKeepleaCamera() {
+      document.getElementById('keeplea-camera-input').click();
+    }
+    function triggerKeepleaGallery() {
+      document.getElementById('keeplea-gallery-input').click();
+    }
+    function triggerKeepleaDoc() {
+      document.getElementById('keeplea-doc-input').click();
+    }
+    function triggerKeepleaAudio() {
+      document.getElementById('keeplea-audio-input').click();
+    }
+
+    async function handleKeepleaFileSelected(e, type) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+
+      const scanModal = document.getElementById('keepleaScanModal');
+      const scanImg = document.getElementById('keepleaScanPreviewImg');
+      const scanPh = document.getElementById('keepleaScanPlaceholder');
+      scanModal.classList.remove('hidden');
+
+      try {
+        let base64Data = "";
+        let previewSrc = "";
+
+        if (type === 'image') {
+          scanImg.classList.remove('hidden');
+          scanPh.classList.add('hidden');
+          base64Data = await compressImageFile(file);
+          previewSrc = "data:" + (file.type || "image/jpeg") + ";base64," + base64Data;
+          scanImg.src = previewSrc;
+        } else {
+          scanImg.classList.add('hidden');
+          scanPh.classList.remove('hidden');
+          document.getElementById('keepleaScanPlaceholderIcon').textContent = type === 'audio' ? '🎙️' : '📄';
+          document.getElementById('keepleaScanPlaceholderName').textContent = file.name;
+          base64Data = await readFileAsBase64(file);
+        }
+
+        // Gemini API로 분석
+        const apiKey = localStorage.getItem('smart_archive_gemini_key') || '';
+        let aiResult = null;
+        if (apiKey) {
+          aiResult = await callGeminiMultimodal(base64Data, file.type || (type === 'audio' ? 'audio/mp3' : 'application/pdf'), apiKey);
+        }
+        if (!aiResult) {
+          aiResult = fallbackKeepleaMediaAnalysis(file.name, type);
+        }
+
+        const newItem = {
+          id: "kp_" + Date.now(),
+          createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+          title: aiResult.title || file.name,
+          category: aiResult.category || "기타",
+          summary: aiResult.summary || "내용이 등록되었습니다.",
+          tags: aiResult.tags || ["#인벤토리"],
+          photoData: previewSrc,
+          fileName: file.name,
+          fileType: type,
+          wifiSsid: aiResult.wifiSsid || null,
+          wifiPassword: aiResult.wifiPassword || null
+        };
+
+        keepleaItems.unshift(newItem);
+        await saveKeepleaItem(newItem);
+        renderKeepleaCategoryTabs();
+        renderKeepleaItems();
+        updateMainCounts();
+        showToast("🎉 킵리아 인벤토리에 새 항목이 등록되었습니다!");
+      } catch(err) {
+        showToast("⚠️ 분석 중 오류 발생: " + err.message, "error");
+      } finally {
+        scanModal.classList.add('hidden');
+      }
+    }
+
+    function compressImageFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let w = img.width, h = img.height;
+            const maxDim = 1200;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+              else { w = Math.round((w * maxDim) / h); h = maxDim; }
+            }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressed = canvas.toDataURL("image/jpeg", 0.75);
+            resolve(compressed.split(",")[1]);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function callGeminiMultimodal(b64, mime, key) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+        const promptText = `사진/문서/음성의 핵심 내용을 분석해 JSON만 출력하세요:
+{
+  "title": "물건/문서 명칭 (20자 이내)",
+  "category": "가전/디지털 | 와이파이/네트워크 | 문서/계약 | 음성메모/회의 | 차량/정비 | 생활/인테리어 | 기타 중 하나",
+  "summary": "• 핵심 정보 1\n• 핵심 정보 2",
+  "tags": ["#태그1", "#태그2"],
+  "wifiSsid": "와이파이 라벨인 경우 SSID명, 아니면 null",
+  "wifiPassword": "와이파이 라벨인 경우 비번, 아니면 null"
+}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                { inlineData: { mimeType: mime, data: b64 } }
+              ]
+            }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 600 }
+          })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const clean = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+        const f = clean.indexOf('{'), l = clean.lastIndexOf('}');
+        if (f >= 0 && l > f) return JSON.parse(clean.substring(f, l + 1));
+      } catch(e) {}
+      return null;
+    }
+
+    function fallbackKeepleaMediaAnalysis(name, type) {
+      const lower = name.toLowerCase();
+      let cat = "기타";
+      let title = name.replace(/\.[^/.]+$/, "");
+      if (type === 'audio') {
+        cat = "음성메모/회의";
+        title = "음성 기록: " + title;
+      } else if (type === 'doc') {
+        cat = "문서/계약";
+      } else if (/wifi|iptime|router/i.test(lower)) {
+        cat = "와이파이/네트워크";
+      } else if (/car|차량|정비/i.test(lower)) {
+        cat = "차량/정비";
+      }
+      return {
+        title: title,
+        category: cat,
+        summary: `• ${title} 등록 항목\n• 등록일시: ${new Date().toLocaleDateString('ko-KR')}`,
+        tags: ["#킵리아", "#인벤토리", "#" + cat]
+      };
+    }
+
+    function renderKeepleaCategoryTabs() {
+      const container = document.getElementById('keepleaCategoryTabsContainer');
+      if (!container) return;
+      const counts = {};
+      keepleaItems.forEach(i => {
+        const c = i.category || '기타';
+        counts[c] = (counts[c] || 0) + 1;
+      });
+      const cats = Object.keys(counts);
+      let html = `
+        <button onclick="selectKeepleaCategory('전체')" class="keeplea-cat-btn ${currentKeepleaCategory === '전체' ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="전체">
+          🌐 전체 <span id="keepleaCountAll" class="ml-1 opacity-80">(${keepleaItems.length})</span>
+        </button>
+      `;
+      cats.forEach(c => {
+        const active = currentKeepleaCategory === c;
+        html += `
+          <button onclick="selectKeepleaCategory('${c}')" class="keeplea-cat-btn ${active ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="${c}">
+            ${c} (${counts[c]})
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function selectKeepleaCategory(cat) {
+      currentKeepleaCategory = cat;
+      document.querySelectorAll('.keeplea-cat-btn').forEach(btn => {
+        if (btn.dataset.kcat === cat) {
+          btn.className = "keeplea-cat-btn active px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-teal-600 text-white shadow-sm transition-colors";
+        } else {
+          btn.className = "keeplea-cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors";
+        }
+      });
+      renderKeepleaItems();
+    }
+
+    function renderKeepleaItems() {
+      const grid = document.getElementById('keepleaItemsGrid');
+      const empty = document.getElementById('keepleaEmptyState');
+      if (!grid) return;
+
+      let filtered = [...keepleaItems];
+      if (currentKeepleaCategory !== '전체') {
+        filtered = filtered.filter(i => (i.category || '기타') === currentKeepleaCategory);
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(i => {
+          const t = (i.title || "").toLowerCase();
+          const s = (i.summary || "").toLowerCase();
+          const c = (i.category || "").toLowerCase();
+          const tags = Array.isArray(i.tags) ? i.tags.join(" ").toLowerCase() : (i.tags || "").toLowerCase();
+          return t.includes(q) || s.includes(q) || c.includes(q) || tags.includes(q);
+        });
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      grid.innerHTML = filtered.map(item => `
+        <div onclick="openKeepleaDetailModal('${item.id}')" class="bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 p-4 shadow-sm hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700/50 transition-all cursor-pointer flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
+                ${escapeHtml(item.category || '기타')}
+              </span>
+              ${item.wifiSsid ? `
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <i class="fa-solid fa-wifi text-[9px]"></i> WiFi
+                </span>
+              ` : ''}
+            </div>
+            ${item.photoData ? `
+              <div class="w-full h-36 rounded-xl overflow-hidden bg-slate-100 dark:bg-dark-900 mb-3 border border-slate-100 dark:border-dark-800">
+                <img src="${item.photoData}" class="w-full h-full object-cover">
+              </div>
+            ` : `
+              <div class="w-full h-24 rounded-xl bg-slate-50 dark:bg-dark-900 mb-3 border border-slate-100 dark:border-dark-800 flex items-center justify-center text-3xl text-slate-300 dark:text-slate-600">
+                <i class="fa-solid fa-box-archive"></i>
+              </div>
+            `}
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1.5">${escapeHtml(item.title)}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed whitespace-pre-wrap">${escapeHtml(item.summary || "")}</p>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span>${formatRelativeTime(item.createdAt)}</span>
+            <span class="text-teal-600 dark:text-teal-400 font-semibold hover:underline">상세보기 →</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openKeepleaDetailModal(id) {
+      const item = keepleaItems.find(i => i.id === id);
+      if (!item) return;
+      activeKeepleaItemId = id;
+
+      document.getElementById('keepleaDetailTitle').textContent = item.title || "";
+      document.getElementById('keepleaDetailCatBadge').textContent = item.category || "기타";
+      document.getElementById('keepleaEditTitle').value = item.title || "";
+      document.getElementById('keepleaEditSummary').value = item.summary || "";
+      document.getElementById('keepleaEditCategory').value = item.category || "";
+      document.getElementById('keepleaEditTags').value = Array.isArray(item.tags) ? item.tags.join(", ") : (item.tags || "");
+
+      const imgWrap = document.getElementById('keepleaDetailImageWrap');
+      const img = document.getElementById('keepleaDetailImg');
+      if (item.photoData) {
+        img.src = item.photoData;
+        imgWrap.classList.remove('hidden');
+      } else {
+        imgWrap.classList.add('hidden');
+      }
+
+      const wifiBox = document.getElementById('keepleaDetailWifiBox');
+      if (item.wifiSsid) {
+        document.getElementById('keepleaDetailWifiSsid').textContent = `SSID: ${item.wifiSsid} / PW: ${item.wifiPassword || '(없음)'}`;
+        wifiBox.classList.remove('hidden');
+      } else {
+        wifiBox.classList.add('hidden');
+      }
+
+      document.getElementById('keepleaDetailModal').classList.remove('hidden');
+    }
+
+    function closeKeepleaDetailModal() {
+      document.getElementById('keepleaDetailModal').classList.add('hidden');
+      activeKeepleaItemId = null;
+    }
+
+    async function saveKeepleaItemEdit() {
+      if (!activeKeepleaItemId) return;
+      const item = keepleaItems.find(i => i.id === activeKeepleaItemId);
+      if (!item) return;
+
+      item.title = document.getElementById('keepleaEditTitle').value.trim() || item.title;
+      item.summary = document.getElementById('keepleaEditSummary').value.trim();
+      item.category = document.getElementById('keepleaEditCategory').value.trim() || "기타";
+      const tagsStr = document.getElementById('keepleaEditTags').value;
+      item.tags = tagsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
+      await saveKeepleaItem(item);
+      renderKeepleaCategoryTabs();
+      renderKeepleaItems();
+      closeKeepleaDetailModal();
+      showToast("✅ 수정 내용이 저장되었습니다.");
+    }
+
+    async function deleteKeepleaItemFromModal() {
+      if (!activeKeepleaItemId) return;
+      if (!confirm("이 인벤토리 항목을 삭제하시겠습니까?")) return;
+      const id = activeKeepleaItemId;
+      keepleaItems = keepleaItems.filter(i => i.id !== id);
+      await deleteKeepleaItem(id);
+      renderKeepleaCategoryTabs();
+      renderKeepleaItems();
+      updateMainCounts();
+      closeKeepleaDetailModal();
+      showToast("🗑️ 항목이 삭제되었습니다.");
+    }
+
+    function showKeepleaWifiQrFromDetail() {
+      if (!activeKeepleaItemId) return;
+      const item = keepleaItems.find(i => i.id === activeKeepleaItemId);
+      if (!item || !item.wifiSsid) return;
+
+      const modal = document.getElementById('keepleaWifiQrModal');
+      const container = document.getElementById('keepleaQrContainer');
+      document.getElementById('keepleaQrSsidLabel').textContent = `SSID: ${item.wifiSsid}`;
+      container.innerHTML = "";
+
+      const qrText = `WIFI:S:${item.wifiSsid};T:WPA;P:${item.wifiPassword || ''};;`;
+      if (typeof QRCode !== "undefined") {
+        new QRCode(container, {
+          text: qrText,
+          width: 170,
+          height: 170,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeKeepleaWifiQrModal() {
+      document.getElementById('keepleaWifiQrModal').classList.add('hidden');
+    }
 
   </script>
 </body>
