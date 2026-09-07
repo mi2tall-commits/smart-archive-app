@@ -124,7 +124,7 @@
               <h1 class="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">AI Smart Archive</h1>
               <span class="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded">PRO</span>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">지능형 텔레그램 연동 북마크 보관소</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">스마트 북마크 &amp; AI 프롬프트 통합 보관소</p>
           </div>
         </div>
 
@@ -156,13 +156,14 @@
             <span>텔레그램 연동</span>
           </button>
 
-          <!-- 직접 URL 추가 버튼 -->
+          <!-- 동적 추가 버튼 (북마크/프롬프트 탭 연동) -->
           <button 
-            onclick="openAddModal()" 
+            id="dynamicAddBtn"
+            onclick="handleDynamicAdd()" 
             class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
           >
-            <i class="fa-solid fa-plus text-xs"></i>
-            <span>링크 추가</span>
+            <i id="dynamicAddIcon" class="fa-solid fa-plus text-xs"></i>
+            <span id="dynamicAddText">링크 추가</span>
           </button>
 
           <!-- 새로고침 버튼 -->
@@ -204,9 +205,36 @@
           </button>
         </div>
       </div>
+
+    <!-- 🗂️ 북마크 / 프롬프트 탭 네비게이션 -->
+    <div class="border-t border-slate-200/80 dark:border-dark-800/80 pt-1">
+      <div class="flex items-center gap-2">
+        <button 
+          id="tabBtnBookmark" 
+          onclick="switchMainTab('bookmark')" 
+          class="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 transition-colors"
+        >
+          <i class="fa-solid fa-bookmark text-xs"></i>
+          <span>스마트 북마크</span>
+          <span id="badgeBookmarkCount" class="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-full">0</span>
+        </button>
+
+        <button 
+          id="tabBtnPrompt" 
+          onclick="switchMainTab('prompt')" 
+          class="flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles text-xs text-violet-500"></i>
+          <span>AI 프롬프트 보관소</span>
+          <span id="badgePromptCount" class="px-1.5 py-0.5 text-[10px] font-semibold bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 rounded-full">0</span>
+        </button>
+      </div>
+    </div>
+
     </div>
   </header>
 
+<div id="bookmarkView">
   <!-- 🏷️ 카테고리 필터 탭 & 툴바 -->
   <section class="bg-white/60 dark:bg-dark-850/60 border-b border-slate-200 dark:border-dark-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
@@ -309,6 +337,113 @@
     </div>
 
   </main>
+  </div><!-- /#bookmarkView -->
+
+  <!-- ========================================== -->
+  <!-- 🗂️ [프롬프트 보관소] 뷰 영역 -->
+  <!-- ========================================== -->
+  <div id="promptView" class="hidden">
+    
+    <!-- 프롬프트 카테고리 필터 탭 & 툴바 -->
+    <section class="bg-white/60 dark:bg-dark-850/60 border-b border-slate-200 dark:border-dark-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+        <div class="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+          
+          <!-- 카테고리 필터 버튼 목록 -->
+          <div class="flex items-center gap-1.5 flex-nowrap" id="promptCategoryFilterContainer">
+            <button onclick="setPromptCategoryFilter('all')" data-pcat="all" class="pcat-btn active px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap bg-violet-600 text-white shadow-sm transition-colors">
+              전체 <span id="promptCountAll" class="ml-1 opacity-80">(0)</span>
+            </button>
+            <button onclick="setPromptCategoryFilter('pinned')" data-pcat="pinned" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              ⭐ 즐겨찾기 <span id="promptCountPinned" class="ml-1 opacity-80">(0)</span>
+            </button>
+            <button onclick="setPromptCategoryFilter('✍️ 글쓰기/창작')" data-pcat="✍️ 글쓰기/창작" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              ✍️ 글쓰기/창작
+            </button>
+            <button onclick="setPromptCategoryFilter('💻 코딩/개발')" data-pcat="💻 코딩/개발" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              💻 코딩/개발
+            </button>
+            <button onclick="setPromptCategoryFilter('📢 마케팅/SNS')" data-pcat="📢 마케팅/SNS" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              📢 마케팅/SNS
+            </button>
+            <button onclick="setPromptCategoryFilter('🎨 이미지 생성')" data-pcat="🎨 이미지 생성" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              🎨 이미지 생성
+            </button>
+            <button onclick="setPromptCategoryFilter('🔍 분석/리서치')" data-pcat="🔍 분석/리서치" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              🔍 분석/리서치
+            </button>
+            <button onclick="setPromptCategoryFilter('🌐 번역/외국어')" data-pcat="🌐 번역/외국어" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              🌐 번역/외국어
+            </button>
+            <button onclick="setPromptCategoryFilter('🤖 업무/자동화')" data-pcat="🤖 업무/자동화" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              🤖 업무/자동화
+            </button>
+            <button onclick="setPromptCategoryFilter('기타')" data-pcat="기타" class="pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors">
+              기타
+            </button>
+          </div>
+
+          <!-- 정렬 선택기 & 액션 -->
+          <div class="flex items-center gap-2 shrink-0">
+            <select 
+              id="promptSortSelect" 
+              onchange="handlePromptSortChange(this.value)"
+              class="px-2.5 py-1.5 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 text-slate-700 dark:text-slate-300 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-500"
+            >
+              <option value="newest">🕒 최신 등록순</option>
+              <option value="oldest">⌛ 오래된순</option>
+              <option value="title">🔤 제목순 (A-Z)</option>
+              <option value="pinned">⭐ 즐겨찾기 우선</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 📢 프롬프트 태그 활성 필터 바 -->
+    <div id="promptActiveTagBar" class="hidden bg-violet-50 dark:bg-violet-950/40 border-b border-violet-200 dark:border-violet-800/40 py-2">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs text-violet-800 dark:text-violet-300">
+          <i class="fa-solid fa-tag"></i>
+          <span>프롬프트 태그 필터:</span>
+          <span id="promptActiveTagBadge" class="font-bold px-2 py-0.5 bg-violet-200 dark:bg-violet-900 rounded text-violet-900 dark:text-violet-200"></span>
+        </div>
+        <button onclick="clearPromptTagFilter()" class="text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1">
+          <i class="fa-solid fa-xmark"></i> 필터 해제
+        </button>
+      </div>
+    </div>
+
+    <!-- 프롬프트 메인 콘텐츠 카드 그리드 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      
+      <!-- 빈 상태 (Empty State) -->
+      <div id="promptEmptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 rounded-2xl bg-violet-50 dark:bg-dark-800 border border-violet-200 dark:border-dark-750 flex items-center justify-center text-violet-500 text-3xl mb-4 shadow-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">보관된 프롬프트가 없습니다</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed">
+          스레드(Threads), 구글 검색, X에서 발견한 유용한 프롬프트를 복사하여 붙여넣어 보세요!<br>
+          AI가 자동으로 제목, 3줄 요약, 카테고리, 해시태그를 정리해 드립니다.
+        </p>
+        <div class="flex items-center gap-3">
+          <button onclick="openAddPromptModal()" class="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-md shadow-violet-600/20 transition-all">
+            <i class="fa-solid fa-plus mr-1.5"></i> 첫 번째 프롬프트 등록
+          </button>
+        </div>
+      </div>
+
+      <!-- 프롬프트 카드 그리드 (반응형 다단 Masonry) -->
+      <div id="promptMasonryContainer" class="masonry-grid">
+        <!-- JavaScript로 동적 렌더링 -->
+      </div>
+
+    </main>
+
+  </div><!-- /#promptView -->
+
 
   <!-- 📱 텔레그램 연동 가이드 모달 -->
   <div id="telegramModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -544,6 +679,312 @@
       <div class="px-6 py-4 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-end gap-2.5">
         <button onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-xl transition-colors">취소</button>
         <button onclick="submitEditBookmark()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 🪄 프롬프트 등록 및 AI 자동 요약 모달 -->
+  <div id="addPromptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in zoom-in duration-200">
+      
+      <!-- 모달 헤더 -->
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-900/30">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center">
+            <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">AI 프롬프트 보관</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">복사한 프롬프트를 붙여넣으면 AI가 자동 분석합니다</p>
+          </div>
+        </div>
+        <button onclick="closeAddPromptModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 모달 바디 -->
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- 프롬프트 원문 입력 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              프롬프트 원문 <span class="text-rose-500">*</span>
+            </label>
+            <span id="promptCharCount" class="text-[11px] text-slate-400">0자</span>
+          </div>
+          <textarea 
+            id="inputPromptContent" 
+            rows="6" 
+            oninput="handlePromptTextInput(this.value)"
+            placeholder="스레드나 웹에서 복사한 프롬프트를 여기에 붙여넣으세요...&#10;(예: 당신은 전문 마케터입니다. 20대 타겟 인스타그램 카피 5개를 작성해줘...)" 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white placeholder-slate-400 resize-none leading-relaxed"
+          ></textarea>
+        </div>
+
+        <!-- AI 자동 분석 실행 버튼 -->
+        <div class="flex items-center gap-2">
+          <button 
+            id="analyzePromptBtn"
+            onclick="analyzePromptInput()" 
+            class="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-violet-600/20 flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-sparkles text-xs"></i>
+            <span>Gemini AI 자동 분석 &amp; 태그 추출</span>
+          </button>
+        </div>
+
+        <!-- AI 분석 로딩 인디케이터 -->
+        <div id="promptAnalyzingBox" class="hidden p-4 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/40 rounded-xl text-center">
+          <div class="inline-block w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin mb-2"></div>
+          <p class="text-xs font-semibold text-violet-800 dark:text-violet-300">AI가 프롬프트의 목적, 핵심 요약, 추천 모델, 키워드를 분석 중입니다...</p>
+        </div>
+
+        <!-- 프롬프트 제목 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">프롬프트 제목</label>
+          <input 
+            type="text" 
+            id="inputPromptTitle" 
+            placeholder="프롬프트의 목적을 한눈에 알 수 있는 제목" 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+          >
+        </div>
+
+        <!-- AI 핵심 요약 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">AI 3줄 핵심 요약</label>
+          <textarea 
+            id="inputPromptSummary" 
+            rows="3" 
+            placeholder="• 어떤 프롬프트인지&#10;• 어떤 상황에 쓰면 좋은지&#10;• 기대되는 결과물" 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white resize-none leading-relaxed"
+          ></textarea>
+        </div>
+
+        <!-- 카테고리 & 추천 AI 모델 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">카테고리</label>
+            <select 
+              id="inputPromptCategory" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+            >
+              <option value="✍️ 글쓰기/창작">✍️ 글쓰기/창작</option>
+              <option value="💻 코딩/개발">💻 코딩/개발</option>
+              <option value="📢 마케팅/SNS">📢 마케팅/SNS</option>
+              <option value="🎨 이미지 생성">🎨 이미지 생성</option>
+              <option value="🔍 분석/리서치">🔍 분석/리서치</option>
+              <option value="🌐 번역/외국어">🌐 번역/외국어</option>
+              <option value="🤖 업무/자동화">🤖 업무/자동화</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">추천 AI 모델</label>
+            <select 
+              id="inputPromptModel" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+            >
+              <option value="ChatGPT (GPT-4o)">ChatGPT (GPT-4o)</option>
+              <option value="Claude 3.5 Sonnet">Claude 3.5 Sonnet</option>
+              <option value="Gemini 2.0 / 1.5">Gemini 2.0 / 1.5</option>
+              <option value="Midjourney v6">Midjourney v6</option>
+              <option value="DALL-E 3">DALL-E 3</option>
+              <option value="범용 (모든 AI)">범용 (모든 AI)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 키워드 태그 & 출처 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">키워드 태그 (쉼표 구분)</label>
+            <input 
+              type="text" 
+              id="inputPromptTags" 
+              placeholder="#스레드, #마케팅, #인스타" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+            >
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">수집 출처</label>
+            <input 
+              type="text" 
+              id="inputPromptSource" 
+              placeholder="예: 스레드 @username / 구글 검색" 
+              class="w-full px-3 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+            >
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 -->
+      <div class="px-6 py-4 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-between gap-2.5 shrink-0">
+        <button 
+          onclick="openApiKeySettingModal()" 
+          class="text-xs text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-gear"></i>
+          <span>Gemini API 설정</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button 
+            onclick="closeAddPromptModal()" 
+            class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-xl transition-colors"
+          >
+            취소
+          </button>
+          <button 
+            id="submitPromptBtn"
+            onclick="submitNewPrompt()" 
+            class="px-5 py-2 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-violet-600/20 transition-all flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-check"></i>
+            <span>보관소에 저장</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 📖 프롬프트 상세 조회 및 원클릭 복사 모달 -->
+  <div id="viewPromptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+      
+      <!-- 모달 헤더 -->
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-900/30">
+        <div class="flex items-center gap-2 min-w-0 pr-4">
+          <span id="viewPromptCategoryBadge" class="px-2.5 py-1 text-xs font-bold rounded-lg shrink-0 bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300">
+            카테고리
+          </span>
+          <span id="viewPromptModelBadge" class="px-2 py-0.5 text-[11px] font-semibold rounded-md shrink-0 bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700">
+            모델
+          </span>
+          <h3 id="viewPromptTitle" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+            프롬프트 제목
+          </h3>
+        </div>
+        <button onclick="closeViewPromptModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 모달 바디 -->
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- AI 요약 블록 -->
+        <div id="viewPromptSummaryWrap" class="p-3.5 bg-violet-50/80 dark:bg-violet-950/30 rounded-xl border border-violet-100 dark:border-violet-900/30">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300 mb-1.5">
+            <i class="fa-solid fa-sparkles text-xs"></i>
+            <span>AI 3줄 핵심 요약</span>
+          </div>
+          <div id="viewPromptSummaryText" class="text-xs text-slate-700 dark:text-slate-300 space-y-1 leading-relaxed">
+            <!-- 동적 삽입 -->
+          </div>
+        </div>
+
+        <!-- 프롬프트 본문 전체 + 복사 버튼 -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-terminal text-xs text-violet-500"></i>
+              <span>프롬프트 원문</span>
+            </span>
+            <button 
+              id="copyPromptModalBtn"
+              onclick="copyPromptModalContent()" 
+              class="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all transform active:scale-95"
+            >
+              <i class="fa-regular fa-copy text-xs"></i>
+              <span>원클릭 복사</span>
+            </button>
+          </div>
+          <div class="relative">
+            <pre 
+              id="viewPromptContent" 
+              class="w-full p-4 bg-slate-900 text-slate-100 rounded-xl text-xs sm:text-sm font-mono whitespace-pre-wrap break-all select-all leading-relaxed max-h-[350px] overflow-y-auto border border-slate-800"
+            ></pre>
+          </div>
+        </div>
+
+        <!-- 태그 및 출처 정보 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-dark-800 text-xs">
+          <div id="viewPromptTags" class="flex flex-wrap gap-1.5">
+            <!-- 태그 목록 동적 삽입 -->
+          </div>
+          <div id="viewPromptSourceWrap" class="text-slate-400 text-[11px]">
+            <!-- 출처 -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 -->
+      <div class="px-6 py-3.5 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-between shrink-0">
+        <span id="viewPromptDate" class="text-[11px] text-slate-400">등록일시</span>
+        <div class="flex items-center gap-2">
+          <button 
+            id="viewPromptPinBtn" 
+            onclick="togglePromptPinFromModal()" 
+            class="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-lg transition-colors flex items-center gap-1"
+          >
+            <i class="fa-regular fa-star"></i>
+            <span>즐겨찾기</span>
+          </button>
+          <button 
+            id="viewPromptDeleteBtn" 
+            onclick="deletePromptFromModal()" 
+            class="px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors flex items-center gap-1"
+          >
+            <i class="fa-regular fa-trash-can"></i>
+            <span>삭제</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ⚙️ Gemini API Key 설정 모달 -->
+  <div id="apiKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-md w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-key text-amber-500"></i>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Gemini API 키 설정</h3>
+        </div>
+        <button onclick="closeApiKeySettingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300">
+        <p>
+          프롬프트를 붙여넣었을 때 실시간으로 제목, 3줄 요약, 태그를 자동 분석하는 데 사용됩니다.<br>
+          입력하신 키는 브라우저 내부(localStorage)에 안전하게 저장되며 외부 서버로 유출되지 않습니다.
+        </p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Google AI Studio API Key
+          </label>
+          <input 
+            type="password" 
+            id="inputGeminiKey" 
+            placeholder="AIzaSy..." 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+          >
+          <p class="mt-1 text-[11px] text-slate-400">
+            * 키가 없더라도 지능형 자체 키워드 분석기가 자동으로 작동합니다.
+          </p>
+        </div>
+      </div>
+      <div class="px-6 py-3.5 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900/50 flex items-center justify-end gap-2">
+        <button onclick="closeApiKeySettingModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 rounded-xl transition-colors">취소</button>
+        <button onclick="saveGeminiApiKey()" class="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl shadow-md transition-colors">저장 완료</button>
       </div>
     </div>
   </div>
@@ -1201,6 +1642,790 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+
+    // ==========================================
+    // 🗂️ AI 프롬프트 보관소 상태 & 비즈니스 로직
+    // ==========================================
+    let prompts = [];
+    let currentMainTab = 'bookmark'; // 'bookmark' | 'prompt'
+    let currentPromptCategory = 'all';
+    let currentPromptTag = '';
+    let currentPromptSort = 'newest';
+    let activeViewingPromptId = null;
+
+    // 프롬프트 로컬 캐시 키
+    const PROMPT_STORAGE_KEY = 'smart_archive_prompts';
+    const GEMINI_KEY_STORAGE = 'smart_archive_gemini_key';
+
+    // 기본 Gemini Key (사용자가 모달에서 설정하거나 내장 분석기 사용)
+    const DEFAULT_EMBEDDED_KEY = "";
+
+    // 🚀 초기화 훅에 프롬프트 로드 추가
+    const origInit = window.onload;
+    window.addEventListener("DOMContentLoaded", () => {
+      loadPromptLocalCache();
+      checkUrlTabParam();
+      updateMainCounts();
+    });
+
+    // URL 쿼리 파라미터 확인 (?tab=prompt)
+    function checkUrlTabParam() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab === 'prompt') {
+          switchMainTab('prompt');
+        }
+      } catch(e) {}
+    }
+
+    // 🗂️ 메인 탭 전환 (북마크 <-> 프롬프트)
+    function switchMainTab(targetTab) {
+      currentMainTab = targetTab;
+      const bView = document.getElementById('bookmarkView');
+      const pView = document.getElementById('promptView');
+      const tBtnB = document.getElementById('tabBtnBookmark');
+      const tBtnP = document.getElementById('tabBtnPrompt');
+      const addBtn = document.getElementById('dynamicAddBtn');
+      const addText = document.getElementById('dynamicAddText');
+      const searchDesk = document.getElementById('searchInputDesktop');
+      const searchMob = document.getElementById('searchInputMobile');
+
+      if (targetTab === 'bookmark') {
+        bView.classList.remove('hidden');
+        pView.classList.add('hidden');
+        
+        tBtnB.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 transition-colors";
+        tBtnP.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
+
+        addBtn.className = "inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95";
+        addText.textContent = "링크 추가";
+        if (searchDesk) searchDesk.placeholder = "제목, 요약 내용, #태그, 도메인 검색...";
+        if (searchMob) searchMob.placeholder = "제목, 요약, #태그 검색...";
+        renderGrid();
+      } else {
+        bView.classList.add('hidden');
+        pView.classList.remove('hidden');
+        
+        tBtnP.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 border-violet-600 text-violet-600 dark:text-violet-400 transition-colors";
+        tBtnB.className = "flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors";
+
+        addBtn.className = "inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 active:bg-violet-700 rounded-xl shadow-md shadow-violet-600/20 transition-all transform active:scale-95";
+        addText.textContent = "프롬프트 추가";
+        if (searchDesk) searchDesk.placeholder = "프롬프트 제목, 본문, #태그, AI모델 검색...";
+        if (searchMob) searchMob.placeholder = "프롬프트 검색...";
+        renderPromptGrid();
+      }
+    }
+
+    // 상단 동적 추가 버튼 핸들러
+    function handleDynamicAdd() {
+      if (currentMainTab === 'bookmark') {
+        openAddModal();
+      } else {
+        openAddPromptModal();
+      }
+    }
+
+    // 💾 프롬프트 로컬 캐시 관리
+    function loadPromptLocalCache() {
+      try {
+        const cached = localStorage.getItem(PROMPT_STORAGE_KEY);
+        if (cached) {
+          prompts = JSON.parse(cached);
+        } else {
+          // 최초 방문 시 유용한 기본 예시 프롬프트 3선 탑재
+          prompts = getInitialStarterPrompts();
+          savePromptLocalCache();
+        }
+        renderPromptGrid();
+        updateMainCounts();
+      } catch(e) {
+        prompts = getInitialStarterPrompts();
+      }
+    }
+
+    function savePromptLocalCache() {
+      try {
+        localStorage.setItem(PROMPT_STORAGE_KEY, JSON.stringify(prompts));
+      } catch(e) {}
+    }
+
+    // 유용한 스타터 프롬프트 데이터
+    function getInitialStarterPrompts() {
+      return [
+        {
+          id: "pr_sample_1",
+          createdAt: "2026-09-07 09:30:00",
+          title: "스레드 바이럴 스토리텔링 인게이지먼트 생성기",
+          content: "당신은 스레드(Threads)에서 10만 팔로워를 보유한 바이럴 크리에이터입니다.\n아래 주제에 대해 읽는 사람의 스크롤을 멈추게 하는 강력한 첫 줄(Hook)과, 3개의 인사이트 포인트, 마지막 질문형 CTA(Call to Action)로 구성된 스레드 게시물을 작성해주세요.\n\n주제: [원하는 주제 입력]\n어조: 솔직하고 담백하며 통찰력 있는 문체",
+          summary: "• 스레드 스크롤을 멈추는 강력한 훅(Hook) 작성\n• 3개의 핵심 인사이트 불릿 및 공감대 형성\n• 댓글을 유도하는 참여형 CTA(Call to Action) 포함",
+          category: "📢 마케팅/SNS",
+          model: "ChatGPT (GPT-4o)",
+          tags: ["#스레드", "#바이럴", "#SNS마케팅", "#카피라이팅"],
+          source: "Threads @growth_hacker",
+          pinned: true
+        },
+        {
+          id: "pr_sample_2",
+          createdAt: "2026-09-06 14:15:00",
+          title: "시니어 프론트엔드 코드 리뷰 및 성능 최적화",
+          content: "당신은 10년 차 수석 프론트엔드 아키텍트입니다. 아래 제공되는 자바스크립트/타입스크립트 코드를 정밀 분석해주세요.\n1. 성능 병목 지점 (불필요한 리렌더링, 메모리 누수, O(N^2) 연산 등) 식별\n2. 가독성 및 디자인 패턴 개선 제안\n3. 프로덕션 수준으로 리팩토링된 최종 코드 제시",
+          summary: "• 리액트 및 자바스크립트 코드 성능 병목 정밀 분석\n• 가독성, 메모리 누수 방지 및 클린 코드 가이드\n• 프로덕션 배포 가능한 최적화 리팩토링 코드 제공",
+          category: "💻 코딩/개발",
+          model: "Claude 3.5 Sonnet",
+          tags: ["#코드리뷰", "#자바스크립트", "#성능최적화", "#리팩토링"],
+          source: "구글 검색 / GitHub Discussions",
+          pinned: false
+        },
+        {
+          id: "pr_sample_3",
+          createdAt: "2026-09-05 18:40:00",
+          title: "미드저니 영화적 시네마틱 8K 조명 프롬프트 템플릿",
+          content: "/imagine prompt: Cinematic film still, a futuristic glass pavilion filled with bioluminescent plants at twilight, soft volumetric morning mist, shot on 35mm Arri Alexa, anamorphic lens flare, photorealistic, 8k resolution, ultra detailed, award-winning cinematography --ar 16:9 --style raw --v 6.0",
+          summary: "• 영화적 아리 알렉사(Arri Alexa) 35mm 카메라 질감 연출\n• 황혼의 바이오루미네센트 조명과 안개 효과 극대화\n• 미드저니 v6 와이드 스크린 16:9 영화 스틸컷",
+          category: "🎨 이미지 생성",
+          model: "Midjourney v6",
+          tags: ["#미드저니", "#이미지생성", "#시네마틱", "#8K"],
+          source: "X @ai_art_curator",
+          pinned: true
+        }
+      ];
+    }
+
+    // 🎨 프롬프트 카드 렌더링
+    function renderPromptGrid() {
+      const container = document.getElementById('promptMasonryContainer');
+      const emptyState = document.getElementById('promptEmptyState');
+      if (!container) return;
+
+      let filtered = [...prompts];
+
+      // 1. 카테고리 필터
+      if (currentPromptCategory === 'pinned') {
+        filtered = filtered.filter(p => p.pinned);
+      } else if (currentPromptCategory !== 'all') {
+        filtered = filtered.filter(p => p.category === currentPromptCategory);
+      }
+
+      // 2. 태그 필터
+      if (currentPromptTag) {
+        filtered = filtered.filter(p => {
+          if (!p.tags) return false;
+          const tStr = Array.isArray(p.tags) ? p.tags.join(" ") : String(p.tags);
+          return tStr.toLowerCase().includes(currentPromptTag.toLowerCase());
+        });
+      }
+
+      // 3. 검색어 필터
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(p => {
+          const title = (p.title || "").toLowerCase();
+          const summary = (p.summary || "").toLowerCase();
+          const content = (p.content || "").toLowerCase();
+          const model = (p.model || "").toLowerCase();
+          const source = (p.source || "").toLowerCase();
+          const tags = Array.isArray(p.tags) ? p.tags.join(" ").toLowerCase() : (p.tags || "").toLowerCase();
+          return title.includes(q) || summary.includes(q) || content.includes(q) || model.includes(q) || source.includes(q) || tags.includes(q);
+        });
+      }
+
+      // 4. 정렬
+      if (currentPromptSort === 'newest') {
+        // 이미 최신순
+      } else if (currentPromptSort === 'oldest') {
+        filtered.reverse();
+      } else if (currentPromptSort === 'title') {
+        filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      } else if (currentPromptSort === 'pinned') {
+        filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = filtered.map(item => createPromptCardHtml(item)).join('');
+    }
+
+    // 📇 프롬프트 카드 HTML 생성
+    function createPromptCardHtml(p) {
+      const isPinned = p.pinned;
+      const tagList = Array.isArray(p.tags) ? p.tags : (p.tags ? String(p.tags).split(',').map(t=>t.trim()) : []);
+      const previewText = (p.content || '').substring(0, 180);
+
+      // 요약 불릿 포인트 생성
+      let summaryHtml = '';
+      if (p.summary) {
+        const bullets = p.summary.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        summaryHtml = `
+          <div class="mt-2.5 p-3 bg-violet-50/70 dark:bg-violet-950/20 rounded-xl border border-violet-100 dark:border-violet-900/30 space-y-1">
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-violet-700 dark:text-violet-300">
+              <i class="fa-solid fa-sparkles text-[10px]"></i>
+              <span>AI 요약</span>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1 leading-relaxed">
+              ${bullets.map(b => `
+                <div class="flex items-start gap-1.5">
+                  <span class="text-violet-500 font-bold leading-none mt-0.5">•</span>
+                  <span>${escapeHtml(b.replace(/^[•\-\*]\s*/, ''))}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-700/50 transition-all duration-200 overflow-hidden flex flex-col relative" id="prompt-card-${p.id}">
+          <div class="p-4 flex-1 flex flex-col">
+            
+            <!-- 상단 뱃지 행 -->
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+                <span class="px-2 py-0.5 text-[10px] font-bold bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 rounded-md shrink-0">
+                  ${escapeHtml(p.category || '기타')}
+                </span>
+                ${p.model ? `
+                  <span class="px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 rounded-md border border-slate-200 dark:border-dark-700 truncate max-w-[120px]">
+                    ${escapeHtml(p.model)}
+                  </span>
+                ` : ''}
+              </div>
+              <button 
+                onclick="togglePromptPin('${p.id}')" 
+                title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" 
+                class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'} transition-colors shrink-0"
+              >
+                <i class="${isPinned ? 'fa-solid' : 'fa-regular'} fa-star text-sm"></i>
+              </button>
+            </div>
+
+            <!-- 제목 (클릭 시 상세 모달) -->
+            <h3 
+              onclick="openViewPromptModal('${p.id}')"
+              class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 leading-snug line-clamp-2 transition-colors cursor-pointer mb-1"
+            >
+              ${escapeHtml(p.title || '제목 없음')}
+            </h3>
+
+            <!-- AI 3줄 요약 -->
+            ${summaryHtml}
+
+            <!-- 프롬프트 원문 미리보기 (코드 블록 스타일) -->
+            <div 
+              onclick="openViewPromptModal('${p.id}')"
+              class="mt-2.5 p-3 bg-slate-900 dark:bg-dark-900 rounded-xl text-slate-200 font-mono text-[11px] leading-relaxed line-clamp-3 cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/80"
+            >
+              ${escapeHtml(previewText)}...
+            </div>
+
+            <!-- 해시태그 목록 -->
+            ${tagList.length > 0 ? `
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                ${tagList.map(tag => `
+                  <button onclick="setPromptTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 text-[11px] font-medium rounded-md border border-violet-200/60 dark:border-violet-800/40 transition-colors">
+                    ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- 카드 하단 액션 툴바 -->
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-400">
+              <span class="text-[11px] text-slate-400 dark:text-slate-500">${formatRelativeTime(p.createdAt)}</span>
+              <div class="flex items-center gap-1">
+                <!-- 원클릭 복사 버튼 -->
+                <button 
+                  onclick="copyPromptCardText('${p.id}')" 
+                  title="프롬프트 원문 복사" 
+                  class="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-600 hover:text-white text-violet-700 dark:text-violet-300 rounded-lg text-xs font-semibold border border-violet-200/80 dark:border-violet-800/50 transition-all active:scale-95"
+                >
+                  <i class="fa-regular fa-copy text-xs"></i>
+                  <span>복사</span>
+                </button>
+                <button 
+                  onclick="openViewPromptModal('${p.id}')" 
+                  title="상세 보기" 
+                  class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <i class="fa-regular fa-eye text-sm"></i>
+                </button>
+                <button 
+                  onclick="deletePrompt('${p.id}')" 
+                  title="삭제" 
+                  class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors"
+                >
+                  <i class="fa-regular fa-trash-can text-sm"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    // 📋 프롬프트 텍스트 입력 시 글자수 카운팅
+    function handlePromptTextInput(val) {
+      const len = (val || "").length;
+      const countEl = document.getElementById('promptCharCount');
+      if (countEl) countEl.textContent = `${len.toLocaleString()}자`;
+    }
+
+    // 🪄 Gemini AI 자동 분석 함수 (스레드/구글 프롬프트 정밀 분석)
+    async function analyzePromptInput() {
+      const content = document.getElementById('inputPromptContent').value.trim();
+      if (!content || content.length < 5) {
+        showToast("⚠️ 분석할 프롬프트 원문을 먼저 입력해 주세요.", "error");
+        return;
+      }
+
+      const analyzingBox = document.getElementById('promptAnalyzingBox');
+      const analyzeBtn = document.getElementById('analyzePromptBtn');
+      analyzingBox.classList.remove('hidden');
+      analyzeBtn.disabled = true;
+      analyzeBtn.classList.add('opacity-50');
+
+      const apiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || DEFAULT_EMBEDDED_KEY;
+
+      try {
+        let aiResult = null;
+        
+        // 1. Google Gemini API 호출 시도
+        if (apiKey) {
+          aiResult = await callGeminiForPrompt(content, apiKey);
+        }
+
+        // 2. 만약 API 실패 시 고성능 내장 휴리스틱 파서로 즉각 안전 대체
+        if (!aiResult) {
+          aiResult = fallbackAnalyzePrompt(content);
+        }
+
+        // 폼 필드 자동 채우기
+        if (aiResult) {
+          document.getElementById('inputPromptTitle').value = aiResult.title || "";
+          document.getElementById('inputPromptSummary').value = aiResult.summary || "";
+          if (aiResult.category) document.getElementById('inputPromptCategory').value = aiResult.category;
+          if (aiResult.model) document.getElementById('inputPromptModel').value = aiResult.model;
+          if (aiResult.tags) {
+            const tagStr = Array.isArray(aiResult.tags) ? aiResult.tags.join(", ") : aiResult.tags;
+            document.getElementById('inputPromptTags').value = tagStr;
+          }
+          if (aiResult.source && !document.getElementById('inputPromptSource').value) {
+            document.getElementById('inputPromptSource').value = aiResult.source;
+          }
+          showToast("✨ AI 분석 완료! 제목, 요약, 태그가 자동 생성되었습니다.");
+        }
+      } catch(err) {
+        console.warn("AI 분석 오류 (내장 분석기로 처리):", err);
+        const fallback = fallbackAnalyzePrompt(content);
+        document.getElementById('inputPromptTitle').value = fallback.title;
+        document.getElementById('inputPromptSummary').value = fallback.summary;
+        document.getElementById('inputPromptCategory').value = fallback.category;
+        document.getElementById('inputPromptTags').value = fallback.tags.join(", ");
+        showToast("💡 내장 지능형 분석기로 프롬프트를 분류했습니다.");
+      } finally {
+        analyzingBox.classList.add('hidden');
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.remove('opacity-50');
+      }
+    }
+
+    // Google Gemini API 직접 호출
+    async function callGeminiForPrompt(promptText, apiKey) {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const systemInstruction = `당신은 AI 프롬프트 아카이빙 전문가입니다. 사용자가 복사해온 프롬프트 텍스트를 읽고, 나중에 검색하기 쉽도록 JSON 규격으로 반환하세요.
+반드시 마크다운 코드블록(\`\`\`json) 없이 순수 JSON만 반환하세요:
+{
+  "title": "프롬프트의 목적을 명확히 요약한 30자 이내의 한국어 제목",
+  "summary": "• 이 프롬프트가 무엇을 하는지\n• 어떤 상황에서 쓰면 좋은지\n• 기대되는 결과물이나 특징",
+  "category": "✍️ 글쓰기/창작 또는 💻 코딩/개발 또는 📢 마케팅/SNS 또는 🎨 이미지 생성 또는 🔍 분석/리서치 또는 🌐 번역/외국어 또는 🤖 업무/자동화 또는 기타 중 정확히 하나",
+  "model": "ChatGPT (GPT-4o), Claude 3.5 Sonnet, Gemini 2.0 / 1.5, Midjourney v6, DALL-E 3, 범용 (모든 AI) 중 하나",
+  "tags": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"]
+}`;
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            { role: "user", parts: [{ text: `${systemInstruction}\n\n[프롬프트 원문]:\n${promptText.substring(0, 3000)}` }] }
+          ],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 800 }
+        })
+      });
+
+      if (!res.ok) throw new Error(`Gemini API Error ${res.status}`);
+      const data = await res.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const first = cleanJson.indexOf('{');
+      const last = cleanJson.lastIndexOf('}');
+      if (first >= 0 && last > first) {
+        return JSON.parse(cleanJson.substring(first, last + 1));
+      }
+      return null;
+    }
+
+    // 내장 지능형 프롬프트 분석기 (네트워크 장애/API 키 부재 시 100% 작동)
+    function fallbackAnalyzePrompt(text) {
+      const lower = text.toLowerCase();
+      let category = "기타";
+      let model = "범용 (모든 AI)";
+      const tags = [];
+
+      if (/midjourney|imagine|ar 16:9|v 6|photorealistic|cinematic|8k|render/i.test(lower)) {
+        category = "🎨 이미지 생성";
+        model = "Midjourney v6";
+        tags.push("#이미지생성", "#미드저니", "#비주얼");
+      } else if (/코드|함수|javascript|python|react|typescript|sql|html|css|bug|에러|refactor/i.test(lower)) {
+        category = "💻 코딩/개발";
+        model = "Claude 3.5 Sonnet";
+        tags.push("#개발", "#코딩", "#프로그래밍");
+      } else if (/스레드|threads|인스타|마케팅|카피|조회수|바이럴|인게이지먼트|광고|고객/i.test(lower)) {
+        category = "📢 마케팅/SNS";
+        model = "ChatGPT (GPT-4o)";
+        tags.push("#마케팅", "#스레드", "#SNS", "#카피라이팅");
+      } else if (/소설|에세이|작문|스토리|대본|글쓰기|문장|교정/i.test(lower)) {
+        category = "✍️ 글쓰기/창작";
+        model = "ChatGPT (GPT-4o)";
+        tags.push("#글쓰기", "#창작", "#스토리");
+      } else if (/번역|translate|영어|회화|영작|grammar/i.test(lower)) {
+        category = "🌐 번역/외국어";
+        model = "Claude 3.5 Sonnet";
+        tags.push("#번역", "#영어", "#외국어");
+      } else if (/분석|요약|데이터|리서치|보고서|통계|엑셀/i.test(lower)) {
+        category = "🔍 분석/리서치";
+        model = "Gemini 2.0 / 1.5";
+        tags.push("#분석", "#리서치", "#데이터");
+      } else {
+        tags.push("#프롬프트", "#AI팁");
+      }
+
+      // 첫 1~2줄에서 제목 추출
+      const firstLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      let title = firstLines[0] || "유용한 AI 프롬프트";
+      title = title.replace(/^[\#\*\-\s\d\.\:\;]+/, '').substring(0, 35);
+      if (!title || title.length < 3) title = `${category.replace(/[^가-힣a-zA-Z]/g, '')} 실용 프롬프트`;
+
+      return {
+        title: title,
+        summary: `• ${title} 실행을 위한 특화 프롬프트\n• AI에게 명확한 역할(Role)과 맥락을 부여하여 답변 품질 향상\n• 요구사항에 맞춤화된 고품질 산출물 생성`,
+        category: category,
+        model: model,
+        tags: tags.slice(0, 5)
+      };
+    }
+
+    // ➕ 새 프롬프트 저장
+    async function submitNewPrompt() {
+      const content = document.getElementById('inputPromptContent').value.trim();
+      let title = document.getElementById('inputPromptTitle').value.trim();
+      const summary = document.getElementById('inputPromptSummary').value.trim();
+      const category = document.getElementById('inputPromptCategory').value;
+      const model = document.getElementById('inputPromptModel').value;
+      const tagsInput = document.getElementById('inputPromptTags').value;
+      const source = document.getElementById('inputPromptSource').value.trim();
+
+      if (!content) {
+        showToast("⚠️ 프롬프트 원문을 입력해 주세요.", "error");
+        return;
+      }
+
+      if (!title) {
+        title = content.split('\n')[0].substring(0, 30) || "새 프롬프트";
+      }
+
+      const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
+      const newPrompt = {
+        id: "pr_" + Date.now(),
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        title: title,
+        content: content,
+        summary: summary,
+        category: category,
+        model: model,
+        tags: tags,
+        source: source,
+        pinned: false
+      };
+
+      // 1. Optimistic UI (로컬 즉시 저장)
+      prompts.unshift(newPrompt);
+      savePromptLocalCache();
+      renderPromptGrid();
+      updateMainCounts();
+      closeAddPromptModal();
+      showToast("🎉 새 프롬프트가 보관소에 저장되었습니다!");
+
+      // 2. 백엔드 GAS API 동기화 시도 (비동기)
+      try {
+        fetch(`${GAS_API_URL}?action=addPrompt&data=${encodeURIComponent(JSON.stringify(newPrompt))}`)
+          .catch(() => {});
+      } catch(e) {}
+    }
+
+    // ⭐ 프롬프트 즐겨찾기 토글
+    function togglePromptPin(id) {
+      const item = prompts.find(p => p.id === id);
+      if (!item) return;
+      item.pinned = !item.pinned;
+      savePromptLocalCache();
+      renderPromptGrid();
+      updateMainCounts();
+      showToast(item.pinned ? "⭐ 즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.");
+      
+      try {
+        fetch(`${GAS_API_URL}?action=togglePromptPin&id=${id}`).catch(()=>{});
+      } catch(e) {}
+    }
+
+    // 🗑️ 프롬프트 삭제
+    function deletePrompt(id) {
+      if (!confirm("이 프롬프트를 보관소에서 삭제하시겠습니까?")) return;
+      prompts = prompts.filter(p => p.id !== id);
+      savePromptLocalCache();
+      renderPromptGrid();
+      updateMainCounts();
+      showToast("🗑️ 프롬프트가 삭제되었습니다.");
+
+      try {
+        fetch(`${GAS_API_URL}?action=deletePrompt&id=${id}`).catch(()=>{});
+      } catch(e) {}
+    }
+
+    // 📋 카드에서 즉시 프롬프트 원문 클립보드 복사
+    function copyPromptCardText(id) {
+      const item = prompts.find(p => p.id === id);
+      if (!item || !item.content) return;
+      copyToClipboardText(item.content);
+      showToast("📋 프롬프트 원문이 클립보드에 복사되었습니다! 즉시 붙여넣으세요.");
+    }
+
+    // 📋 클립보드 복사 헬퍼
+    function copyToClipboardText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+    }
+
+    // 📖 프롬프트 상세 조회 모달 열기
+    function openViewPromptModal(id) {
+      const item = prompts.find(p => p.id === id);
+      if (!item) return;
+      activeViewingPromptId = id;
+
+      document.getElementById('viewPromptTitle').textContent = item.title || "제목 없음";
+      document.getElementById('viewPromptCategoryBadge').textContent = item.category || "기타";
+      document.getElementById('viewPromptModelBadge').textContent = item.model || "범용 AI";
+      document.getElementById('viewPromptContent').textContent = item.content || "";
+      document.getElementById('viewPromptDate').textContent = `등록일시: ${item.createdAt || "방금 전"}`;
+
+      // 요약 렌더링
+      const summaryWrap = document.getElementById('viewPromptSummaryWrap');
+      const summaryText = document.getElementById('viewPromptSummaryText');
+      if (item.summary) {
+        const bullets = item.summary.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        summaryText.innerHTML = bullets.map(b => `
+          <div class="flex items-start gap-2">
+            <span class="text-violet-500 font-bold">•</span>
+            <span>${escapeHtml(b.replace(/^[•\-\*]\s*/, ''))}</span>
+          </div>
+        `).join('');
+        summaryWrap.classList.remove('hidden');
+      } else {
+        summaryWrap.classList.add('hidden');
+      }
+
+      // 태그 렌더링
+      const tagsWrap = document.getElementById('viewPromptTags');
+      const tagList = Array.isArray(item.tags) ? item.tags : (item.tags ? String(item.tags).split(',') : []);
+      tagsWrap.innerHTML = tagList.map(t => {
+        const cleanT = t.trim();
+        return `<span class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 rounded-md font-medium text-[11px] border border-violet-200/60 dark:border-violet-800/40">${escapeHtml(cleanT.startsWith('#') ? cleanT : '#' + cleanT)}</span>`;
+      }).join('');
+
+      // 출처
+      const sourceWrap = document.getElementById('viewPromptSourceWrap');
+      if (item.source) {
+        sourceWrap.textContent = `출처: ${item.source}`;
+        sourceWrap.classList.remove('hidden');
+      } else {
+        sourceWrap.classList.add('hidden');
+      }
+
+      // 즐겨찾기 버튼 상태
+      const pinBtn = document.getElementById('viewPromptPinBtn');
+      if (pinBtn) {
+        pinBtn.innerHTML = item.pinned 
+          ? '<i class="fa-solid fa-star text-amber-500 mr-1"></i><span>즐겨찾기 해제</span>' 
+          : '<i class="fa-regular fa-star mr-1"></i><span>즐겨찾기</span>';
+      }
+
+      document.getElementById('viewPromptModal').classList.remove('hidden');
+    }
+
+    function closeViewPromptModal() {
+      document.getElementById('viewPromptModal').classList.add('hidden');
+      activeViewingPromptId = null;
+    }
+
+    // 상세 모달에서 복사
+    function copyPromptModalContent() {
+      if (!activeViewingPromptId) return;
+      copyPromptCardText(activeViewingPromptId);
+      const btn = document.getElementById('copyPromptModalBtn');
+      if (btn) {
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-xs mr-1"></i><span>복사 완료!</span>';
+        btn.classList.replace('bg-violet-600', 'bg-emerald-600');
+        setTimeout(() => {
+          btn.innerHTML = origHtml;
+          btn.classList.replace('bg-emerald-600', 'bg-violet-600');
+        }, 2000);
+      }
+    }
+
+    function togglePromptPinFromModal() {
+      if (!activeViewingPromptId) return;
+      togglePromptPin(activeViewingPromptId);
+      openViewPromptModal(activeViewingPromptId);
+    }
+
+    function deletePromptFromModal() {
+      if (!activeViewingPromptId) return;
+      deletePrompt(activeViewingPromptId);
+      closeViewPromptModal();
+    }
+
+    // ➕ 프롬프트 추가 모달 열기/닫기
+    function openAddPromptModal() {
+      document.getElementById('addPromptModal').classList.remove('hidden');
+      document.getElementById('inputPromptContent').value = '';
+      document.getElementById('inputPromptTitle').value = '';
+      document.getElementById('inputPromptSummary').value = '';
+      document.getElementById('inputPromptTags').value = '';
+      document.getElementById('inputPromptSource').value = '';
+      document.getElementById('promptCharCount').textContent = '0자';
+      document.getElementById('promptAnalyzingBox').classList.add('hidden');
+      setTimeout(() => document.getElementById('inputPromptContent').focus(), 100);
+    }
+
+    function closeAddPromptModal() {
+      document.getElementById('addPromptModal').classList.add('hidden');
+    }
+
+    // 🏷️ 프롬프트 카테고리 필터링
+    function setPromptCategoryFilter(cat) {
+      currentPromptCategory = cat;
+      document.querySelectorAll('.pcat-btn').forEach(btn => {
+        if (btn.dataset.pcat === cat) {
+          btn.className = "pcat-btn active px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap bg-violet-600 text-white shadow-sm transition-colors";
+        } else {
+          btn.className = "pcat-btn px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors";
+        }
+      });
+      renderPromptGrid();
+    }
+
+    function setPromptTagFilter(tag) {
+      currentPromptTag = tag;
+      const bar = document.getElementById('promptActiveTagBar');
+      const badge = document.getElementById('promptActiveTagBadge');
+      bar.classList.remove('hidden');
+      badge.textContent = tag;
+      renderPromptGrid();
+    }
+
+    function clearPromptTagFilter() {
+      currentPromptTag = '';
+      document.getElementById('promptActiveTagBar').classList.add('hidden');
+      renderPromptGrid();
+    }
+
+    function handlePromptSortChange(val) {
+      currentPromptSort = val;
+      renderPromptGrid();
+    }
+
+    // 📊 메인 뱃지 및 카운트 업데이트
+    function updateMainCounts() {
+      // 1. 북마크 카운트
+      const bCount = bookmarks.length;
+      const bBadge = document.getElementById('badgeBookmarkCount');
+      if (bBadge) bBadge.textContent = bCount;
+
+      // 2. 프롬프트 카운트
+      const pCount = prompts.length;
+      const pPinned = prompts.filter(p => p.pinned).length;
+      const pBadge = document.getElementById('badgePromptCount');
+      const pAll = document.getElementById('promptCountAll');
+      const pPin = document.getElementById('promptCountPinned');
+
+      if (pBadge) pBadge.textContent = pCount;
+      if (pAll) pAll.textContent = `(${pCount})`;
+      if (pPin) pPin.textContent = `(${pPinned})`;
+    }
+
+    // ⚙️ Gemini API 설정 모달
+    function openApiKeySettingModal() {
+      const curKey = localStorage.getItem(GEMINI_KEY_STORAGE) || "";
+      document.getElementById('inputGeminiKey').value = curKey;
+      document.getElementById('apiKeyModal').classList.remove('hidden');
+    }
+
+    function closeApiKeySettingModal() {
+      document.getElementById('apiKeyModal').classList.add('hidden');
+    }
+
+    function saveGeminiApiKey() {
+      const val = document.getElementById('inputGeminiKey').value.trim();
+      if (val) {
+        localStorage.setItem(GEMINI_KEY_STORAGE, val);
+        showToast("✅ Gemini API 키가 저장되었습니다.");
+      } else {
+        localStorage.removeItem(GEMINI_KEY_STORAGE);
+        showToast("ℹ️ API 키가 해제되어 내장 분석기를 사용합니다.");
+      }
+      closeApiKeySettingModal();
+    }
+
+    // 🔍 검색 핸들러 확장 (북마크 또는 프롬프트 실시간 검색 연동)
+    const originalHandleSearch = window.handleSearch;
+    window.handleSearch = function(val) {
+      if (typeof originalHandleSearch === 'function') {
+        originalHandleSearch(val);
+      }
+      if (currentMainTab === 'prompt') {
+        renderPromptGrid();
+      }
+    };
+
+    const originalClearSearch = window.clearSearch;
+    window.clearSearch = function() {
+      if (typeof originalClearSearch === 'function') {
+        originalClearSearch();
+      }
+      if (currentMainTab === 'prompt') {
+        renderPromptGrid();
+      }
+    };
+
   </script>
 </body>
 </html>
