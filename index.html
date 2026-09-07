@@ -1742,16 +1742,16 @@
       try {
         const cached = localStorage.getItem(PROMPT_STORAGE_KEY);
         if (cached) {
-          prompts = JSON.parse(cached);
-        } else {
-          // 최초 방문 시 유용한 기본 예시 프롬프트 3선 탑재
-          prompts = getInitialStarterPrompts();
+          // 기존에 저장되었을 수 있는 예시 데이터(pr_sample_*) 자동 정리
+          prompts = JSON.parse(cached).filter(p => p && p.id && !p.id.startsWith("pr_sample_"));
           savePromptLocalCache();
+        } else {
+          prompts = [];
         }
         renderPromptGrid();
         updateMainCounts();
       } catch(e) {
-        prompts = getInitialStarterPrompts();
+        prompts = [];
       }
     }
 
@@ -1761,47 +1761,6 @@
       } catch(e) {}
     }
 
-    // 유용한 스타터 프롬프트 데이터
-    function getInitialStarterPrompts() {
-      return [
-        {
-          id: "pr_sample_1",
-          createdAt: "2026-09-07 09:30:00",
-          title: "스레드 바이럴 스토리텔링 인게이지먼트 생성기",
-          content: "당신은 스레드(Threads)에서 10만 팔로워를 보유한 바이럴 크리에이터입니다.\n아래 주제에 대해 읽는 사람의 스크롤을 멈추게 하는 강력한 첫 줄(Hook)과, 3개의 인사이트 포인트, 마지막 질문형 CTA(Call to Action)로 구성된 스레드 게시물을 작성해주세요.\n\n주제: [원하는 주제 입력]\n어조: 솔직하고 담백하며 통찰력 있는 문체",
-          summary: "• 스레드 스크롤을 멈추는 강력한 훅(Hook) 작성\n• 3개의 핵심 인사이트 불릿 및 공감대 형성\n• 댓글을 유도하는 참여형 CTA(Call to Action) 포함",
-          category: "📢 마케팅/SNS",
-          model: "ChatGPT (GPT-4o)",
-          tags: ["#스레드", "#바이럴", "#SNS마케팅", "#카피라이팅"],
-          source: "Threads @growth_hacker",
-          pinned: true
-        },
-        {
-          id: "pr_sample_2",
-          createdAt: "2026-09-06 14:15:00",
-          title: "시니어 프론트엔드 코드 리뷰 및 성능 최적화",
-          content: "당신은 10년 차 수석 프론트엔드 아키텍트입니다. 아래 제공되는 자바스크립트/타입스크립트 코드를 정밀 분석해주세요.\n1. 성능 병목 지점 (불필요한 리렌더링, 메모리 누수, O(N^2) 연산 등) 식별\n2. 가독성 및 디자인 패턴 개선 제안\n3. 프로덕션 수준으로 리팩토링된 최종 코드 제시",
-          summary: "• 리액트 및 자바스크립트 코드 성능 병목 정밀 분석\n• 가독성, 메모리 누수 방지 및 클린 코드 가이드\n• 프로덕션 배포 가능한 최적화 리팩토링 코드 제공",
-          category: "💻 코딩/개발",
-          model: "Claude 3.5 Sonnet",
-          tags: ["#코드리뷰", "#자바스크립트", "#성능최적화", "#리팩토링"],
-          source: "구글 검색 / GitHub Discussions",
-          pinned: false
-        },
-        {
-          id: "pr_sample_3",
-          createdAt: "2026-09-05 18:40:00",
-          title: "미드저니 영화적 시네마틱 8K 조명 프롬프트 템플릿",
-          content: "/imagine prompt: Cinematic film still, a futuristic glass pavilion filled with bioluminescent plants at twilight, soft volumetric morning mist, shot on 35mm Arri Alexa, anamorphic lens flare, photorealistic, 8k resolution, ultra detailed, award-winning cinematography --ar 16:9 --style raw --v 6.0",
-          summary: "• 영화적 아리 알렉사(Arri Alexa) 35mm 카메라 질감 연출\n• 황혼의 바이오루미네센트 조명과 안개 효과 극대화\n• 미드저니 v6 와이드 스크린 16:9 영화 스틸컷",
-          category: "🎨 이미지 생성",
-          model: "Midjourney v6",
-          tags: ["#미드저니", "#이미지생성", "#시네마틱", "#8K"],
-          source: "X @ai_art_curator",
-          pinned: true
-        }
-      ];
-    }
 
     // 🎨 프롬프트 카드 렌더링
     function renderPromptGrid() {
