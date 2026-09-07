@@ -6,6 +6,9 @@
   <title>AI Smart Archive | 스마트 북마크 & 지식 보관소</title>
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3588/3588658.png">
   
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -1660,9 +1663,16 @@
     // 기본 Gemini Key (사용자가 모달에서 설정하거나 내장 분석기 사용)
     const DEFAULT_EMBEDDED_KEY = "";
 
-    // 🚀 초기화 훅에 프롬프트 로드 추가
+    // 🚀 초기화 훅에 프롬프트 로드 및 텔레그램 웹앱 연동 추가
     const origInit = window.onload;
     window.addEventListener("DOMContentLoaded", () => {
+      // 📱 텔레그램 미니앱(Web App) 환경 감지 및 전체 화면 확장
+      if (window.Telegram && window.Telegram.WebApp) {
+        try {
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        } catch(e) {}
+      }
       loadPromptLocalCache();
       checkUrlTabParam();
       updateMainCounts();
