@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>네비게이션 어플 연결</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      color: #1e293b;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      border: 1px solid #e2e8f0;
+      padding: 36px 24px 28px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon {
+      font-size: 52px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    h1 {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    p.desc {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 16px 0;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-naver { background-color: #03C75A; color: #ffffff; }
+    .btn-kakao { background-color: #FEE500; color: #191919; }
+    .btn-sub {
+      background-color: #f1f5f9;
+      color: #334155;
+      font-size: 14px;
+      padding: 13px 0;
+      font-weight: 600;
+    }
+    .btn-web {
+      font-size: 13px;
+      color: #94a3b8;
+      text-decoration: underline;
+      margin-top: 14px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🚗</div>
+    <h1 id="appTitle">어플로 이동 중...</h1>
+    <p class="desc" id="appDesc">스마트폰 네비게이션 어플을 실행합니다.<br>화면에 팝업이 뜨면 <b>[열기]</b>를 눌러주세요.</p>
+    
+    <a href="#" id="btnPrimary" class="btn">📲 어플 바로 열기</a>
+    <a href="#" id="btnSecondary" class="btn btn-sub">🧭 내비게이션 바로 시작</a>
+    <a href="#" id="btnWeb" class="btn-web">웹 브라우저로 보기</a>
+  </div>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var app = params.get('app') || 'naver';
+
+      var START_NAME = '회사';
+      var START_LAT = 35.4983;
+      var START_LNG = 129.3785;
+      var GOAL_NAME = '구암문구 신정점';
+      var GOAL_LAT = 35.5387;
+      var GOAL_LNG = 129.3113;
+
+      var titleEl = document.getElementById('appTitle');
+      var btnPrimary = document.getElementById('btnPrimary');
+      var btnSecondary = document.getElementById('btnSecondary');
+      var btnWeb = document.getElementById('btnWeb');
+
+      var primaryScheme = '';
+      var secondaryScheme = '';
+      var webUrl = '';
+
+      if (app === 'kakao') {
+        titleEl.innerText = '카카오맵 어플 연결';
+        btnPrimary.className = 'btn btn-kakao';
+        btnPrimary.innerText = '🟡 카카오맵 어플 바로 열기';
+        btnSecondary.innerText = '🧭 카카오내비로 바로 길안내';
+
+        // 1. 카카오맵 자동차 길찾기 스킴
+        primaryScheme = 'kakaomap://route?sp=' + START_LAT + ',' + START_LNG + '&ep=' + GOAL_LAT + ',' + GOAL_LNG + '&by=CAR';
+        // 2. 카카오내비 직접 길안내 스킴
+        secondaryScheme = 'kakaonavi://navigate?name=' + encodeURIComponent(GOAL_NAME) + '&x=' + GOAL_LNG + '&y=' + GOAL_LAT + '&coord_type=wgs84';
+        // 3. 웹 폴백 URL
+        webUrl = 'https://map.kakao.com/link/to/' + encodeURIComponent(GOAL_NAME) + ',' + GOAL_LAT + ',' + GOAL_LNG;
+      } else {
+        titleEl.innerText = '네이버 지도 어플 연결';
+        btnPrimary.className = 'btn btn-naver';
+        btnPrimary.innerText = '🟢 네이버 지도 어플 바로 열기';
+        btnSecondary.innerText = '🧭 네이버 내비게이션 바로 시작';
+
+        // 1. 네이버 지도 자동차 길찾기 스킴
+        primaryScheme = 'nmap://route/car?slat=' + START_LAT + '&slng=' + START_LNG + '&sname=' + encodeURIComponent(START_NAME) + '&dlat=' + GOAL_LAT + '&dlng=' + GOAL_LNG + '&dname=' + encodeURIComponent(GOAL_NAME) + '&appname=https://mi2tall-commits.github.io';
+        // 2. 네이버 내비게이션 직접 실행 스킴
+        secondaryScheme = 'nmap://navigation?dlat=' + GOAL_LAT + '&dlng=' + GOAL_LNG + '&dname=' + encodeURIComponent(GOAL_NAME) + '&appname=https://mi2tall-commits.github.io';
+        // 3. 웹 폴백 URL
+        webUrl = 'https://m.map.naver.com/route.nhn?menu=route&sname=' + encodeURIComponent(START_NAME) + '&sx=' + START_LNG + '&sy=' + START_LAT + '&ename=' + encodeURIComponent(GOAL_NAME) + '&ex=' + GOAL_LNG + '&ey=' + GOAL_LAT + '&pathType=0';
+      }
+
+      btnPrimary.href = primaryScheme;
+      btnSecondary.href = secondaryScheme;
+      btnWeb.href = webUrl;
+
+      // 즉시 딥링크 호출 (페이지 진입 시 0.05초 후 앱 실행 시도)
+      setTimeout(function() {
+        window.location.replace(primaryScheme);
+      }, 50);
+    })();
+  </script>
+</body>
+</html>
