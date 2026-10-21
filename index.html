@@ -1322,7 +1322,7 @@
         filtered = filtered.filter(b => {
           if (!b.tags) return false;
           const tagStr = Array.isArray(b.tags) ? b.tags.join(" ") : String(b.tags);
-          return tagStr.toLowerCase().includes(currentTag.toLowerCase());
+          return tagStr.toLowerCase().includes(currentTag.replace(/^#/, '').toLowerCase());
         });
       }
 
@@ -1414,7 +1414,7 @@
       }
 
       return `
-        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-dark-600 transition-all duration-200 overflow-hidden flex flex-col relative" id="card-${b.id}">
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-dark-600 transition-all duration-200 overflow-hidden flex flex-col relative" id="card-${escapeHtml(b.id)}">
           
           <!-- 상단 썸네일 -->
           ${thumbnailHtml}
@@ -1425,7 +1425,7 @@
             <!-- 메타 헤더: 파비콘 + 도메인 + 카테고리 뱃지 -->
             <div class="flex items-center justify-between gap-2 mb-2">
               <div class="flex items-center gap-2 min-w-0">
-                <img src="${favicon}" alt="" class="w-4 h-4 rounded-sm shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3588/3588658.png'">
+                <img src="${escapeHtml(favicon)}" alt=""" class="w-4 h-4 rounded-sm shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3588/3588658.png'">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">${escapeHtml(domain)}</span>
               </div>
               <span class="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 rounded-md shrink-0">
@@ -1434,7 +1434,7 @@
             </div>
 
             <!-- 북마크 제목 (원클릭 외부 링크 이동) -->
-            <a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 leading-snug line-clamp-2 transition-colors mb-1">
+            <a href="${escapeHtml(safeUrl(b.url))}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 leading-snug line-clamp-2 transition-colors mb-1">
               ${escapeHtml(b.title || '제목 없음')}
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1 opacity-0 group-hover:opacity-80 transition-opacity"></i>
             </a>
@@ -1449,7 +1449,7 @@
             ${tagList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5 mt-3">
                 ${tagList.map(tag => `
-                  <button onclick="setTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium rounded-md border border-emerald-200/60 dark:border-emerald-800/40 transition-colors">
+                  <button onclick="setTagFilter(${jsArg(tag.startsWith('#') ? tag : '#' + tag)})" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium rounded-md border border-emerald-200/60 dark:border-emerald-800/40 transition-colors">
                     ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
                   </button>
                 `).join('')}
@@ -1462,27 +1462,27 @@
               
               <div class="flex items-center gap-1">
                 <!-- 즐겨찾기 토글 -->
-                <button onclick="togglePin('${b.id}')" title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                <button onclick="togglePin(${jsArg(b.id)})" title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
                   <i class="${isPinned ? 'fa-solid' : 'fa-regular'} fa-star text-sm"></i>
                 </button>
 
                 <!-- 읽음 여부 토글 -->
-                <button onclick="toggleRead('${b.id}')" title="${isRead ? '안 읽음으로 표시' : '읽음으로 표시'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isRead ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                <button onclick="toggleRead(${jsArg(b.id)})" title="${isRead ? '안 읽음으로 표시' : '읽음으로 표시'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isRead ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
                   <i class="${isRead ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'} text-sm"></i>
                 </button>
 
                 <!-- URL 복사 -->
-                <button onclick="copyBookmarkUrl('${escapeHtml(b.url)}')" title="URL 복사" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onclick="copyBookmarkUrl(${jsArg(b.url)})" title="URL 복사" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                   <i class="fa-regular fa-copy text-sm"></i>
                 </button>
 
                 <!-- 수정 모달 -->
-                <button onclick="openEditModal('${b.id}')" title="메모/정보 수정" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onclick="openEditModal(${jsArg(b.id)})" title="메모/정보 수정" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                   <i class="fa-regular fa-pen-to-square text-sm"></i>
                 </button>
 
                 <!-- 삭제 -->
-                <button onclick="deleteBookmark('${b.id}')" title="북마크 삭제" class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors">
+                <button onclick="deleteBookmark(${jsArg(b.id)})" title="북마크 삭제" class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors">
                   <i class="fa-regular fa-trash-can text-sm"></i>
                 </button>
               </div>
@@ -1507,7 +1507,7 @@
       showToast(item.pinned ? "⭐ 즐겨찾기에 등록되었습니다." : "즐겨찾기가 해제되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=togglePin&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=togglePin&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1525,7 +1525,7 @@
       showToast(item.read ? "✅ 읽음으로 표시되었습니다." : "📥 읽지 않음으로 변경되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=toggleRead&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=toggleRead&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1542,7 +1542,7 @@
       showToast("🗑️ 북마크가 삭제되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=deleteBookmark&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=deleteBookmark&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1645,6 +1645,7 @@
       if (cAll) cAll.textContent = `(${all})`;
       if (cPinned) cPinned.textContent = `(${pinned})`;
       if (cUnread) cUnread.textContent = `(${unread})`;
+      updateMainCounts();
     }
 
     // ➕ 추가 모달
@@ -1800,7 +1801,7 @@
 
       try {
         const updates = { title, category, tags, memo };
-        await fetch(`${GAS_API_URL}?action=updateBookmark&id=${id}&updates=${encodeURIComponent(JSON.stringify(updates))}`);
+        await fetch(`${GAS_API_URL}?action=updateBookmark&id=${encodeURIComponent(id)}&updates=${encodeURIComponent(JSON.stringify(updates))}`);
       } catch (e) {
         console.error(e);
       }
@@ -1853,6 +1854,16 @@
       if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}시간 전`;
       if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}일 전`;
       return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    }
+
+    // 인라인 onclick 핸들러용 안전한 JS 문자열 인자
+    function jsArg(str) {
+      return escapeHtml(JSON.stringify(String(str == null ? '' : str)));
+    }
+
+    // http(s) 이외의 스킴(javascript: 등) 차단
+    function safeUrl(url) {
+      return /^https?:\/\//i.test(String(url || '').trim()) ? String(url).trim() : '#';
     }
 
     function escapeHtml(str) {
@@ -2020,7 +2031,7 @@
         filtered = filtered.filter(p => {
           if (!p.tags) return false;
           const tStr = Array.isArray(p.tags) ? p.tags.join(" ") : String(p.tags);
-          return tStr.toLowerCase().includes(currentPromptTag.toLowerCase());
+          return tStr.toLowerCase().includes(currentPromptTag.replace(/^#/, '').toLowerCase());
         });
       }
 
@@ -2088,7 +2099,7 @@
       }
 
       return `
-        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-700/50 transition-all duration-200 overflow-hidden flex flex-col relative" id="prompt-card-${p.id}">
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-700/50 transition-all duration-200 overflow-hidden flex flex-col relative" id="prompt-card-${escapeHtml(p.id)}">
           <div class="p-4 flex-1 flex flex-col">
             
             <!-- 상단 뱃지 행 -->
@@ -2104,7 +2115,7 @@
                 ` : ''}
               </div>
               <button 
-                onclick="togglePromptPin('${p.id}')" 
+                onclick="togglePromptPin(${jsArg(p.id)})" 
                 title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" 
                 class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'} transition-colors shrink-0"
               >
@@ -2114,7 +2125,7 @@
 
             <!-- 제목 (클릭 시 상세 모달) -->
             <h3 
-              onclick="openViewPromptModal('${p.id}')"
+              onclick="openViewPromptModal(${jsArg(p.id)})"
               class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 leading-snug line-clamp-2 transition-colors cursor-pointer mb-1"
             >
               ${escapeHtml(p.title || '제목 없음')}
@@ -2125,7 +2136,7 @@
 
             <!-- 프롬프트 원문 미리보기 (코드 블록 스타일) -->
             <div 
-              onclick="openViewPromptModal('${p.id}')"
+              onclick="openViewPromptModal(${jsArg(p.id)})"
               class="mt-2.5 p-3 bg-slate-900 dark:bg-dark-900 rounded-xl text-slate-200 font-mono text-[11px] leading-relaxed line-clamp-3 cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/80"
             >
               ${escapeHtml(previewText)}...
@@ -2135,7 +2146,7 @@
             ${tagList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5 mt-3">
                 ${tagList.map(tag => `
-                  <button onclick="setPromptTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 text-[11px] font-medium rounded-md border border-violet-200/60 dark:border-violet-800/40 transition-colors">
+                  <button onclick="setPromptTagFilter(${jsArg(tag.startsWith('#') ? tag : '#' + tag)})" class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 text-[11px] font-medium rounded-md border border-violet-200/60 dark:border-violet-800/40 transition-colors">
                     ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
                   </button>
                 `).join('')}
@@ -2148,7 +2159,7 @@
               <div class="flex items-center gap-1">
                 <!-- 원클릭 복사 버튼 -->
                 <button 
-                  onclick="copyPromptCardText('${p.id}')" 
+                  onclick="copyPromptCardText(${jsArg(p.id)})" 
                   title="프롬프트 원문 복사" 
                   class="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-600 hover:text-white text-violet-700 dark:text-violet-300 rounded-lg text-xs font-semibold border border-violet-200/80 dark:border-violet-800/50 transition-all active:scale-95"
                 >
@@ -2156,14 +2167,14 @@
                   <span>복사</span>
                 </button>
                 <button 
-                  onclick="openViewPromptModal('${p.id}')" 
+                  onclick="openViewPromptModal(${jsArg(p.id)})" 
                   title="상세 보기" 
                   class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 >
                   <i class="fa-regular fa-eye text-sm"></i>
                 </button>
                 <button 
-                  onclick="deletePrompt('${p.id}')" 
+                  onclick="deletePrompt(${jsArg(p.id)})" 
                   title="삭제" 
                   class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors"
                 >
@@ -2389,7 +2400,7 @@
       showToast(item.pinned ? "⭐ 즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.");
       
       try {
-        fetch(`${GAS_API_URL}?action=togglePromptPin&id=${id}`).catch(()=>{});
+        fetch(`${GAS_API_URL}?action=togglePromptPin&id=${encodeURIComponent(id)}`).catch(()=>{});
       } catch(e) {}
     }
 
@@ -2403,7 +2414,7 @@
       showToast("🗑️ 프롬프트가 삭제되었습니다.");
 
       try {
-        fetch(`${GAS_API_URL}?action=deletePrompt&id=${id}`).catch(()=>{});
+        fetch(`${GAS_API_URL}?action=deletePrompt&id=${encodeURIComponent(id)}`).catch(()=>{});
       } catch(e) {}
     }
 
@@ -2702,7 +2713,9 @@
         const db = await getKeepleaIdb();
         const tx = db.transaction(KEEPLEA_STORE_NAME, "readwrite");
         tx.objectStore(KEEPLEA_STORE_NAME).delete(id);
-      } catch(e) {}
+      } catch(e) {
+        localStorage.setItem("keeplea_local_items", JSON.stringify(keepleaItems));
+      }
     }
 
     function triggerKeepleaCamera() {
@@ -2736,7 +2749,7 @@
           scanImg.classList.remove('hidden');
           scanPh.classList.add('hidden');
           base64Data = await compressImageFile(file);
-          previewSrc = "data:" + (file.type || "image/jpeg") + ";base64," + base64Data;
+          previewSrc = "data:image/jpeg;base64," + base64Data;
           scanImg.src = previewSrc;
         } else {
           scanImg.classList.add('hidden');
@@ -2750,7 +2763,8 @@
         const apiKey = localStorage.getItem('smart_archive_gemini_key') || '';
         let aiResult = null;
         if (apiKey) {
-          aiResult = await callGeminiMultimodal(base64Data, file.type || (type === 'audio' ? 'audio/mp3' : 'application/pdf'), apiKey);
+          const mime = type === 'image' ? 'image/jpeg' : (file.type || (type === 'audio' ? 'audio/mp3' : 'application/pdf'));
+          aiResult = await callGeminiMultimodal(base64Data, mime, apiKey);
         }
         if (!aiResult) {
           aiResult = fallbackKeepleaMediaAnalysis(file.name, type);
@@ -2784,7 +2798,7 @@
     }
 
     function compressImageFile(file) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
           const img = new Image();
@@ -2802,8 +2816,10 @@
             const compressed = canvas.toDataURL("image/jpeg", 0.75);
             resolve(compressed.split(",")[1]);
           };
+          img.onerror = () => reject(new Error("이미지를 열 수 없습니다 (지원되지 않는 형식)"));
           img.src = e.target.result;
         };
+        reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(file);
       });
     }
@@ -2891,8 +2907,8 @@
       cats.forEach(c => {
         const active = currentKeepleaCategory === c;
         html += `
-          <button onclick="selectKeepleaCategory('${c}')" class="keeplea-cat-btn ${active ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="${c}">
-            ${c} (${counts[c]})
+          <button onclick="selectKeepleaCategory(${jsArg(c)})" class="keeplea-cat-btn ${active ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="${escapeHtml(c)}">
+            ${escapeHtml(c)} (${counts[c]})
           </button>
         `;
       });
@@ -2939,7 +2955,7 @@
 
       empty.classList.add('hidden');
       grid.innerHTML = filtered.map(item => `
-        <div onclick="openKeepleaDetailModal('${item.id}')" class="bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 p-4 shadow-sm hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700/50 transition-all cursor-pointer flex flex-col justify-between">
+        <div onclick="openKeepleaDetailModal(${jsArg(item.id)})" class="bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 p-4 shadow-sm hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700/50 transition-all cursor-pointer flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between gap-2 mb-2">
               <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
@@ -3049,7 +3065,8 @@
       document.getElementById('keepleaQrSsidLabel').textContent = `SSID: ${item.wifiSsid}`;
       container.innerHTML = "";
 
-      const qrText = `WIFI:S:${item.wifiSsid};T:WPA;P:${item.wifiPassword || ''};;`;
+      const qrEsc = (v) => String(v).replace(/([\\;,:"])/g, '\\$1');
+      const qrText = `WIFI:S:${qrEsc(item.wifiSsid)};T:WPA;P:${qrEsc(item.wifiPassword || '')};;`;
       if (typeof QRCode !== "undefined") {
         new QRCode(container, {
           text: qrText,
