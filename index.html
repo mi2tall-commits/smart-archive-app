@@ -580,7 +580,7 @@
       </div>
       <div class="space-y-1.5">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-xs font-bold animate-pulse">
-          <i class="fa-solid fa-sparkles text-[10px]"></i> Gemini Multimodal Vision
+          <i class="fa-solid fa-sparkles text-[10px]"></i> Claude Vision
         </div>
         <h3 class="text-base font-bold text-slate-900 dark:text-white">AI 인벤토리 분석 중...</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -954,7 +954,7 @@
             class="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-violet-600/20 flex items-center justify-center gap-2"
           >
             <i class="fa-solid fa-sparkles text-xs"></i>
-            <span>Gemini AI 자동 분석 &amp; 태그 추출</span>
+            <span>Claude AI 자동 분석 &amp; 태그 추출</span>
           </button>
         </div>
 
@@ -1051,7 +1051,7 @@
           class="text-xs text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1.5"
         >
           <i class="fa-solid fa-gear"></i>
-          <span>Gemini API 설정</span>
+          <span>AI API 키 설정</span>
         </button>
         <div class="flex items-center gap-2">
           <button 
@@ -1172,13 +1172,13 @@
     </div>
   </div>
 
-  <!-- ⚙️ Gemini API Key 설정 모달 -->
+  <!-- ⚙️ AI API 키 설정 모달 -->
   <div id="apiKeyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
     <div class="bg-white dark:bg-dark-850 rounded-2xl max-w-md w-full border border-slate-200 dark:border-dark-750 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
       <div class="px-6 py-4 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-key text-amber-500"></i>
-          <h3 class="font-bold text-base text-slate-900 dark:text-white">Gemini API 키 설정</h3>
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">AI API 키 설정</h3>
         </div>
         <button onclick="closeApiKeySettingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -1186,12 +1186,23 @@
       </div>
       <div class="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300">
         <p>
-          프롬프트를 붙여넣었을 때 실시간으로 제목, 3줄 요약, 태그를 자동 분석하는 데 사용됩니다.<br>
-          입력하신 키는 브라우저 내부(localStorage)에 안전하게 저장되며 외부 서버로 유출되지 않습니다.
+          Claude 키는 프롬프트 자동 분석과 킵리아 사진·PDF 분석에, Gemini 키는 킵리아 음성 메모 전사에만 쓰입니다.<br>
+          입력하신 키는 이 브라우저(localStorage)에만 저장되며, Anthropic/Google API로만 직접 전송됩니다.
         </p>
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Google AI Studio API Key
+            Claude API Key (Anthropic Console) — 프롬프트·사진·PDF 분석
+          </label>
+          <input 
+            type="password" 
+            id="inputClaudeKey" 
+            placeholder="sk-ant-..." 
+            class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-900 dark:text-white"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Google AI Studio API Key — 음성 메모 전사 전용
           </label>
           <input 
             type="password" 
@@ -1322,7 +1333,7 @@
         filtered = filtered.filter(b => {
           if (!b.tags) return false;
           const tagStr = Array.isArray(b.tags) ? b.tags.join(" ") : String(b.tags);
-          return tagStr.toLowerCase().includes(currentTag.toLowerCase());
+          return tagStr.toLowerCase().includes(currentTag.replace(/^#/, '').toLowerCase());
         });
       }
 
@@ -1414,7 +1425,7 @@
       }
 
       return `
-        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-dark-600 transition-all duration-200 overflow-hidden flex flex-col relative" id="card-${b.id}">
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-dark-600 transition-all duration-200 overflow-hidden flex flex-col relative" id="card-${escapeHtml(b.id)}">
           
           <!-- 상단 썸네일 -->
           ${thumbnailHtml}
@@ -1425,7 +1436,7 @@
             <!-- 메타 헤더: 파비콘 + 도메인 + 카테고리 뱃지 -->
             <div class="flex items-center justify-between gap-2 mb-2">
               <div class="flex items-center gap-2 min-w-0">
-                <img src="${favicon}" alt="" class="w-4 h-4 rounded-sm shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3588/3588658.png'">
+                <img src="${escapeHtml(favicon)}" alt="" class="w-4 h-4 rounded-sm shrink-0" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3588/3588658.png'">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">${escapeHtml(domain)}</span>
               </div>
               <span class="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 rounded-md shrink-0">
@@ -1434,7 +1445,7 @@
             </div>
 
             <!-- 북마크 제목 (원클릭 외부 링크 이동) -->
-            <a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 leading-snug line-clamp-2 transition-colors mb-1">
+            <a href="${escapeHtml(safeUrl(b.url))}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 leading-snug line-clamp-2 transition-colors mb-1">
               ${escapeHtml(b.title || '제목 없음')}
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1 opacity-0 group-hover:opacity-80 transition-opacity"></i>
             </a>
@@ -1449,7 +1460,7 @@
             ${tagList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5 mt-3">
                 ${tagList.map(tag => `
-                  <button onclick="setTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium rounded-md border border-emerald-200/60 dark:border-emerald-800/40 transition-colors">
+                  <button onclick="setTagFilter(${jsArg(tag.startsWith('#') ? tag : '#' + tag)})" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium rounded-md border border-emerald-200/60 dark:border-emerald-800/40 transition-colors">
                     ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
                   </button>
                 `).join('')}
@@ -1462,27 +1473,27 @@
               
               <div class="flex items-center gap-1">
                 <!-- 즐겨찾기 토글 -->
-                <button onclick="togglePin('${b.id}')" title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                <button onclick="togglePin(${jsArg(b.id)})" title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
                   <i class="${isPinned ? 'fa-solid' : 'fa-regular'} fa-star text-sm"></i>
                 </button>
 
                 <!-- 읽음 여부 토글 -->
-                <button onclick="toggleRead('${b.id}')" title="${isRead ? '안 읽음으로 표시' : '읽음으로 표시'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isRead ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
+                <button onclick="toggleRead(${jsArg(b.id)})" title="${isRead ? '안 읽음으로 표시' : '읽음으로 표시'}" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isRead ? 'text-emerald-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'} transition-colors">
                   <i class="${isRead ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'} text-sm"></i>
                 </button>
 
                 <!-- URL 복사 -->
-                <button onclick="copyBookmarkUrl('${escapeHtml(b.url)}')" title="URL 복사" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onclick="copyBookmarkUrl(${jsArg(b.url)})" title="URL 복사" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                   <i class="fa-regular fa-copy text-sm"></i>
                 </button>
 
                 <!-- 수정 모달 -->
-                <button onclick="openEditModal('${b.id}')" title="메모/정보 수정" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onclick="openEditModal(${jsArg(b.id)})" title="메모/정보 수정" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                   <i class="fa-regular fa-pen-to-square text-sm"></i>
                 </button>
 
                 <!-- 삭제 -->
-                <button onclick="deleteBookmark('${b.id}')" title="북마크 삭제" class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors">
+                <button onclick="deleteBookmark(${jsArg(b.id)})" title="북마크 삭제" class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors">
                   <i class="fa-regular fa-trash-can text-sm"></i>
                 </button>
               </div>
@@ -1507,7 +1518,7 @@
       showToast(item.pinned ? "⭐ 즐겨찾기에 등록되었습니다." : "즐겨찾기가 해제되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=togglePin&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=togglePin&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1525,7 +1536,7 @@
       showToast(item.read ? "✅ 읽음으로 표시되었습니다." : "📥 읽지 않음으로 변경되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=toggleRead&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=toggleRead&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1542,7 +1553,7 @@
       showToast("🗑️ 북마크가 삭제되었습니다.");
 
       try {
-        await fetch(`${GAS_API_URL}?action=deleteBookmark&id=${id}`);
+        await fetch(`${GAS_API_URL}?action=deleteBookmark&id=${encodeURIComponent(id)}`);
       } catch(e) {
         console.error(e);
       }
@@ -1645,6 +1656,7 @@
       if (cAll) cAll.textContent = `(${all})`;
       if (cPinned) cPinned.textContent = `(${pinned})`;
       if (cUnread) cUnread.textContent = `(${unread})`;
+      updateMainCounts();
     }
 
     // ➕ 추가 모달
@@ -1800,7 +1812,7 @@
 
       try {
         const updates = { title, category, tags, memo };
-        await fetch(`${GAS_API_URL}?action=updateBookmark&id=${id}&updates=${encodeURIComponent(JSON.stringify(updates))}`);
+        await fetch(`${GAS_API_URL}?action=updateBookmark&id=${encodeURIComponent(id)}&updates=${encodeURIComponent(JSON.stringify(updates))}`);
       } catch (e) {
         console.error(e);
       }
@@ -1855,6 +1867,16 @@
       return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
     }
 
+    // 인라인 onclick 핸들러용 안전한 JS 문자열 인자
+    function jsArg(str) {
+      return escapeHtml(JSON.stringify(String(str == null ? '' : str)));
+    }
+
+    // http(s) 이외의 스킴(javascript: 등) 차단
+    function safeUrl(url) {
+      return /^https?:\/\//i.test(String(url || '').trim()) ? String(url).trim() : '#';
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -1878,6 +1900,8 @@
     // 프롬프트 로컬 캐시 키
     const PROMPT_STORAGE_KEY = 'smart_archive_prompts';
     const GEMINI_KEY_STORAGE = 'smart_archive_gemini_key';
+    const CLAUDE_KEY_STORAGE = 'smart_archive_claude_key';
+    const CLAUDE_MODEL = 'claude-haiku-5-5';
 
     // 기본 Gemini Key (사용자가 모달에서 설정하거나 내장 분석기 사용)
     const DEFAULT_EMBEDDED_KEY = "";
@@ -2020,7 +2044,7 @@
         filtered = filtered.filter(p => {
           if (!p.tags) return false;
           const tStr = Array.isArray(p.tags) ? p.tags.join(" ") : String(p.tags);
-          return tStr.toLowerCase().includes(currentPromptTag.toLowerCase());
+          return tStr.toLowerCase().includes(currentPromptTag.replace(/^#/, '').toLowerCase());
         });
       }
 
@@ -2088,7 +2112,7 @@
       }
 
       return `
-        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-700/50 transition-all duration-200 overflow-hidden flex flex-col relative" id="prompt-card-${p.id}">
+        <div class="masonry-item group bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 shadow-sm hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-700/50 transition-all duration-200 overflow-hidden flex flex-col relative" id="prompt-card-${escapeHtml(p.id)}">
           <div class="p-4 flex-1 flex flex-col">
             
             <!-- 상단 뱃지 행 -->
@@ -2104,7 +2128,7 @@
                 ` : ''}
               </div>
               <button 
-                onclick="togglePromptPin('${p.id}')" 
+                onclick="togglePromptPin(${jsArg(p.id)})" 
                 title="${isPinned ? '즐겨찾기 해제' : '즐겨찾기 추가'}" 
                 class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 ${isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'} transition-colors shrink-0"
               >
@@ -2114,7 +2138,7 @@
 
             <!-- 제목 (클릭 시 상세 모달) -->
             <h3 
-              onclick="openViewPromptModal('${p.id}')"
+              onclick="openViewPromptModal(${jsArg(p.id)})"
               class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 leading-snug line-clamp-2 transition-colors cursor-pointer mb-1"
             >
               ${escapeHtml(p.title || '제목 없음')}
@@ -2125,7 +2149,7 @@
 
             <!-- 프롬프트 원문 미리보기 (코드 블록 스타일) -->
             <div 
-              onclick="openViewPromptModal('${p.id}')"
+              onclick="openViewPromptModal(${jsArg(p.id)})"
               class="mt-2.5 p-3 bg-slate-900 dark:bg-dark-900 rounded-xl text-slate-200 font-mono text-[11px] leading-relaxed line-clamp-3 cursor-pointer hover:bg-slate-800 transition-colors border border-slate-800/80"
             >
               ${escapeHtml(previewText)}...
@@ -2135,7 +2159,7 @@
             ${tagList.length > 0 ? `
               <div class="flex flex-wrap gap-1.5 mt-3">
                 ${tagList.map(tag => `
-                  <button onclick="setPromptTagFilter('${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}')" class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 text-[11px] font-medium rounded-md border border-violet-200/60 dark:border-violet-800/40 transition-colors">
+                  <button onclick="setPromptTagFilter(${jsArg(tag.startsWith('#') ? tag : '#' + tag)})" class="px-2 py-0.5 bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 text-[11px] font-medium rounded-md border border-violet-200/60 dark:border-violet-800/40 transition-colors">
                     ${escapeHtml(tag.startsWith('#') ? tag : '#' + tag)}
                   </button>
                 `).join('')}
@@ -2148,7 +2172,7 @@
               <div class="flex items-center gap-1">
                 <!-- 원클릭 복사 버튼 -->
                 <button 
-                  onclick="copyPromptCardText('${p.id}')" 
+                  onclick="copyPromptCardText(${jsArg(p.id)})" 
                   title="프롬프트 원문 복사" 
                   class="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-600 hover:text-white text-violet-700 dark:text-violet-300 rounded-lg text-xs font-semibold border border-violet-200/80 dark:border-violet-800/50 transition-all active:scale-95"
                 >
@@ -2156,14 +2180,14 @@
                   <span>복사</span>
                 </button>
                 <button 
-                  onclick="openViewPromptModal('${p.id}')" 
+                  onclick="openViewPromptModal(${jsArg(p.id)})" 
                   title="상세 보기" 
                   class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 >
                   <i class="fa-regular fa-eye text-sm"></i>
                 </button>
                 <button 
-                  onclick="deletePrompt('${p.id}')" 
+                  onclick="deletePrompt(${jsArg(p.id)})" 
                   title="삭제" 
                   class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-500 transition-colors"
                 >
@@ -2198,14 +2222,14 @@
       analyzeBtn.disabled = true;
       analyzeBtn.classList.add('opacity-50');
 
-      const apiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || DEFAULT_EMBEDDED_KEY;
+      const apiKey = localStorage.getItem(CLAUDE_KEY_STORAGE) || '';
 
       try {
         let aiResult = null;
         
-        // 1. Google Gemini API 호출 시도
+        // 1. Claude API 호출 시도
         if (apiKey) {
-          aiResult = await callGeminiForPrompt(content, apiKey);
+          aiResult = await callClaudeForPrompt(content, apiKey);
         }
 
         // 2. 만약 API 실패 시 고성능 내장 휴리스틱 파서로 즉각 안전 대체
@@ -2243,9 +2267,38 @@
       }
     }
 
-    // Google Gemini API 직접 호출
-    async function callGeminiForPrompt(promptText, apiKey) {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // Claude Messages API 호출 후 JSON 파싱 (공통 헬퍼)
+    async function callClaudeJson(contentBlocks, apiKey) {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2026-10-21",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 4000,
+          output_config: { effort: "low" },
+          messages: [{ role: "user", content: contentBlocks }]
+        })
+      });
+      if (!res.ok) throw new Error(`Claude API Error ${res.status}`);
+      const data = await res.json();
+      if (data.stop_reason === "refusal") return null;
+      const rawText = (data.content || []).find(b => b.type === "text")?.text || "";
+      const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const first = cleanJson.indexOf('{');
+      const last = cleanJson.lastIndexOf('}');
+      if (first >= 0 && last > first) {
+        return JSON.parse(cleanJson.substring(first, last + 1));
+      }
+      return null;
+    }
+
+    // Claude API 직접 호출
+    async function callClaudeForPrompt(promptText, apiKey) {
       const systemInstruction = `당신은 AI 프롬프트 아카이빙 전문가입니다. 사용자가 복사해온 프롬프트 텍스트를 읽고, 나중에 검색하기 쉽도록 JSON 규격으로 반환하세요.
 반드시 마크다운 코드블록(\`\`\`json) 없이 순수 JSON만 반환하세요:
 {
@@ -2256,27 +2309,9 @@
   "tags": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"]
 }`;
 
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: `${systemInstruction}\n\n[프롬프트 원문]:\n${promptText.substring(0, 3000)}` }] }
-          ],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 800 }
-        })
-      });
-
-      if (!res.ok) throw new Error(`Gemini API Error ${res.status}`);
-      const data = await res.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const cleanJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const first = cleanJson.indexOf('{');
-      const last = cleanJson.lastIndexOf('}');
-      if (first >= 0 && last > first) {
-        return JSON.parse(cleanJson.substring(first, last + 1));
-      }
-      return null;
+      return await callClaudeJson([
+        { type: "text", text: `${systemInstruction}\n\n[프롬프트 원문]:\n${promptText.substring(0, 3000)}` }
+      ], apiKey);
     }
 
     // 내장 지능형 프롬프트 분석기 (네트워크 장애/API 키 부재 시 100% 작동)
@@ -2389,7 +2424,7 @@
       showToast(item.pinned ? "⭐ 즐겨찾기에 추가되었습니다." : "즐겨찾기가 해제되었습니다.");
       
       try {
-        fetch(`${GAS_API_URL}?action=togglePromptPin&id=${id}`).catch(()=>{});
+        fetch(`${GAS_API_URL}?action=togglePromptPin&id=${encodeURIComponent(id)}`).catch(()=>{});
       } catch(e) {}
     }
 
@@ -2403,7 +2438,7 @@
       showToast("🗑️ 프롬프트가 삭제되었습니다.");
 
       try {
-        fetch(`${GAS_API_URL}?action=deletePrompt&id=${id}`).catch(()=>{});
+        fetch(`${GAS_API_URL}?action=deletePrompt&id=${encodeURIComponent(id)}`).catch(()=>{});
       } catch(e) {}
     }
 
@@ -2597,6 +2632,7 @@
     function openApiKeySettingModal() {
       const curKey = localStorage.getItem(GEMINI_KEY_STORAGE) || "";
       document.getElementById('inputGeminiKey').value = curKey;
+      document.getElementById('inputClaudeKey').value = localStorage.getItem(CLAUDE_KEY_STORAGE) || "";
       document.getElementById('apiKeyModal').classList.remove('hidden');
     }
 
@@ -2605,12 +2641,15 @@
     }
 
     function saveGeminiApiKey() {
-      const val = document.getElementById('inputGeminiKey').value.trim();
-      if (val) {
-        localStorage.setItem(GEMINI_KEY_STORAGE, val);
-        showToast("✅ Gemini API 키가 저장되었습니다.");
+      const claudeVal = document.getElementById('inputClaudeKey').value.trim();
+      const geminiVal = document.getElementById('inputGeminiKey').value.trim();
+      if (claudeVal) localStorage.setItem(CLAUDE_KEY_STORAGE, claudeVal);
+      else localStorage.removeItem(CLAUDE_KEY_STORAGE);
+      if (geminiVal) localStorage.setItem(GEMINI_KEY_STORAGE, geminiVal);
+      else localStorage.removeItem(GEMINI_KEY_STORAGE);
+      if (claudeVal || geminiVal) {
+        showToast("✅ API 키 설정이 저장되었습니다.");
       } else {
-        localStorage.removeItem(GEMINI_KEY_STORAGE);
         showToast("ℹ️ API 키가 해제되어 내장 분석기를 사용합니다.");
       }
       closeApiKeySettingModal();
@@ -2702,7 +2741,9 @@
         const db = await getKeepleaIdb();
         const tx = db.transaction(KEEPLEA_STORE_NAME, "readwrite");
         tx.objectStore(KEEPLEA_STORE_NAME).delete(id);
-      } catch(e) {}
+      } catch(e) {
+        localStorage.setItem("keeplea_local_items", JSON.stringify(keepleaItems));
+      }
     }
 
     function triggerKeepleaCamera() {
@@ -2736,7 +2777,7 @@
           scanImg.classList.remove('hidden');
           scanPh.classList.add('hidden');
           base64Data = await compressImageFile(file);
-          previewSrc = "data:" + (file.type || "image/jpeg") + ";base64," + base64Data;
+          previewSrc = "data:image/jpeg;base64," + base64Data;
           scanImg.src = previewSrc;
         } else {
           scanImg.classList.add('hidden');
@@ -2746,11 +2787,14 @@
           base64Data = await readFileAsBase64(file);
         }
 
-        // Gemini API로 분석
-        const apiKey = localStorage.getItem('smart_archive_gemini_key') || '';
+        // AI 분석 (사진/문서: Claude, 음성: Gemini)
+        const apiKey = localStorage.getItem(type === 'audio' ? GEMINI_KEY_STORAGE : CLAUDE_KEY_STORAGE) || '';
         let aiResult = null;
         if (apiKey) {
-          aiResult = await callGeminiMultimodal(base64Data, file.type || (type === 'audio' ? 'audio/mp3' : 'application/pdf'), apiKey);
+          const mime = type === 'image' ? 'image/jpeg' : (file.type || (type === 'audio' ? 'audio/mp3' : 'application/pdf'));
+          aiResult = type === 'audio'
+            ? await callGeminiMultimodal(base64Data, mime, apiKey)
+            : await callClaudeMultimodal(base64Data, mime, apiKey);
         }
         if (!aiResult) {
           aiResult = fallbackKeepleaMediaAnalysis(file.name, type);
@@ -2784,7 +2828,7 @@
     }
 
     function compressImageFile(file) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
           const img = new Image();
@@ -2802,8 +2846,10 @@
             const compressed = canvas.toDataURL("image/jpeg", 0.75);
             resolve(compressed.split(",")[1]);
           };
+          img.onerror = () => reject(new Error("이미지를 열 수 없습니다 (지원되지 않는 형식)"));
           img.src = e.target.result;
         };
+        reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(file);
       });
     }
@@ -2815,6 +2861,31 @@
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+    }
+
+    // Claude Vision/PDF 분석 (사진·PDF 전용)
+    async function callClaudeMultimodal(b64, mime, key) {
+      try {
+        const promptText = `사진/문서/음성의 핵심 내용을 분석해 JSON만 출력하세요:
+{
+  "title": "물건/문서 명칭 (20자 이내)",
+  "category": "가전/디지털 | 와이파이/네트워크 | 문서/계약 | 음성메모/회의 | 차량/정비 | 생활/인테리어 | 기타 중 하나",
+  "summary": "• 핵심 정보 1\n• 핵심 정보 2",
+  "tags": ["#태그1", "#태그2"],
+  "wifiSsid": "와이파이 라벨인 경우 SSID명, 아니면 null",
+  "wifiPassword": "와이파이 라벨인 경우 비번, 아니면 null"
+}`;
+        let mediaBlock;
+        if (mime === 'application/pdf') {
+          mediaBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } };
+        } else if (mime && mime.startsWith('image/')) {
+          mediaBlock = { type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } };
+        } else {
+          return null;
+        }
+        return await callClaudeJson([mediaBlock, { type: "text", text: promptText }], key);
+      } catch(e) {}
+      return null;
     }
 
     async function callGeminiMultimodal(b64, mime, key) {
@@ -2891,8 +2962,8 @@
       cats.forEach(c => {
         const active = currentKeepleaCategory === c;
         html += `
-          <button onclick="selectKeepleaCategory('${c}')" class="keeplea-cat-btn ${active ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="${c}">
-            ${c} (${counts[c]})
+          <button onclick="selectKeepleaCategory(${jsArg(c)})" class="keeplea-cat-btn ${active ? 'active bg-teal-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'} px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors" data-kcat="${escapeHtml(c)}">
+            ${escapeHtml(c)} (${counts[c]})
           </button>
         `;
       });
@@ -2939,7 +3010,7 @@
 
       empty.classList.add('hidden');
       grid.innerHTML = filtered.map(item => `
-        <div onclick="openKeepleaDetailModal('${item.id}')" class="bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 p-4 shadow-sm hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700/50 transition-all cursor-pointer flex flex-col justify-between">
+        <div onclick="openKeepleaDetailModal(${jsArg(item.id)})" class="bg-white dark:bg-dark-850 rounded-2xl border border-slate-200/80 dark:border-dark-750 p-4 shadow-sm hover:shadow-xl hover:border-teal-300 dark:hover:border-teal-700/50 transition-all cursor-pointer flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between gap-2 mb-2">
               <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
@@ -3049,7 +3120,8 @@
       document.getElementById('keepleaQrSsidLabel').textContent = `SSID: ${item.wifiSsid}`;
       container.innerHTML = "";
 
-      const qrText = `WIFI:S:${item.wifiSsid};T:WPA;P:${item.wifiPassword || ''};;`;
+      const qrEsc = (v) => String(v).replace(/([\\;,:"])/g, '\\$1');
+      const qrText = `WIFI:S:${qrEsc(item.wifiSsid)};T:WPA;P:${qrEsc(item.wifiPassword || '')};;`;
       if (typeof QRCode !== "undefined") {
         new QRCode(container, {
           text: qrText,
